@@ -5,8 +5,20 @@
  * 注册一个聊天面板区域，内嵌 iframe 加载聊天 UI。
  */
 
+import { MessageBridge } from "../core/messageBridge";
+
 const SECTION_ID = "clautero-chat";
 let currentNonce: string | null = null;
+let onRenderCallback: ((browser: HTMLIFrameElement) => void) | null = null;
+
+/**
+ * 设置 iframe 渲染后的回调（由 hooks.ts 调用，避免循环依赖）
+ */
+export function setOnRenderCallback(
+  cb: (browser: HTMLIFrameElement) => void,
+): void {
+  onRenderCallback = cb;
+}
 
 export function registerSidebarPanel(): string {
   const nonce = Zotero.Utilities.randomString(32);
@@ -32,25 +44,14 @@ export function registerSidebarPanel(): string {
       style="width: 100%; height: 500px;"
     />`,
     onRender: ({ body }) => {
-      // iframe 加载后可在此初始化 MessageBridge 的 attach
       const browser = body.querySelector(
         "#clautero-chat-browser",
       ) as HTMLIFrameElement | null;
-      if (browser) {
-        // 延迟 attach，等 iframe 内容加载完成
-        const tryAttach = () => {
-          const { getMessageBridge } = require("../hooks");
-          const bridge = getMessageBridge();
-          if (bridge) {
-            bridge.attach(browser);
-          }
-        };
-        // 使用 Zotero.Promise.delay 等待 iframe 就绪
-        Zotero.Promise.delay(500).then(tryAttach);
+      if (browser && onRenderCallback) {
+        Zotero.Promise.delay(500).then(() => onRenderCallback!(browser));
       }
     },
     onItemChange: ({ setEnabled }) => {
-      // 始终启用聊天面板，不依赖选中条目
       setEnabled(true);
       return true;
     },
@@ -66,6 +67,7 @@ export function unregisterSidebarPanel(): void {
     // 忽略未注册时的错误
   }
   currentNonce = null;
+  onRenderCallback = null;
 }
 
 export function getCurrentNonce(): string | null {

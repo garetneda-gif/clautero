@@ -10,7 +10,6 @@ export class ProxyServer {
   start(): void {
     if (this.running) return;
 
-    // @ts-expect-error nsIHttpServer is a Firefox platform component
     const { HttpServer } = ChromeUtils.importESModule(
       "resource://gre/modules/httpd.sys.mjs",
     );
@@ -61,7 +60,7 @@ export class ProxyServer {
 
     // 读取请求体
     const inputStream = request.bodyInputStream;
-    const scriptableStream = Components.classes[
+    const scriptableStream = (Components.classes as any)[
       "@mozilla.org/scriptableinputstream;1"
     ].createInstance(Components.interfaces.nsIScriptableInputStream);
     scriptableStream.init(inputStream);
@@ -95,8 +94,8 @@ export class ProxyServer {
 
       let lastIndex = 0;
       xhr.onprogress = () => {
-        const newData = xhr.responseText.substring(lastIndex);
-        lastIndex = xhr.responseText.length;
+        const newData = (xhr.responseText || "").substring(lastIndex);
+        lastIndex = (xhr.responseText || "").length;
         if (newData) {
           try {
             response.write(newData);
@@ -108,7 +107,7 @@ export class ProxyServer {
 
       xhr.onload = () => {
         // 写入剩余数据
-        const remaining = xhr.responseText.substring(lastIndex);
+        const remaining = (xhr.responseText || "").substring(lastIndex);
         if (remaining) {
           try {
             response.write(remaining);
@@ -133,7 +132,7 @@ export class ProxyServer {
       xhr.onload = () => {
         response.setStatusLine("1.1", xhr.status, xhr.statusText);
         response.setHeader("Content-Type", "application/json", false);
-        response.write(xhr.responseText);
+        response.write(xhr.responseText || "");
         response.finish();
       };
 

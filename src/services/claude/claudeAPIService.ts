@@ -132,8 +132,8 @@ export class ClaudeAPIService {
       });
 
       xhr.onprogress = () => {
-        const newData = xhr.responseText.substring(lastIndex);
-        lastIndex = xhr.responseText.length;
+        const newData = (xhr.responseText || "").substring(lastIndex);
+        lastIndex = (xhr.responseText || "").length;
         if (newData) {
           parser.feed(newData);
         }

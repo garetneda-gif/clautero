@@ -4,10 +4,13 @@ import { registerPrefsScripts } from "./ui/preferencePane";
 import {
   registerSidebarPanel,
   unregisterSidebarPanel,
+  setOnRenderCallback,
 } from "./ui/sidebarPanel";
 import { MessageBridge } from "./core/messageBridge";
+import { ProxyServer } from "./services/claude/proxyServer";
 
 let messageBridge: MessageBridge | null = null;
+let proxyServer: ProxyServer | null = null;
 
 async function onStartup() {
   await Promise.all([
@@ -58,16 +61,38 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
 
   // 注册样式表
   const doc = win.document;
-  const link = doc.createElement("link");
-  link.rel = "stylesheet";
-  link.href = `chrome://${addon.data.config.addonRef}/content/clautero.css`;
+  const link = ztoolkit.UI.createElement(doc, "link", {
+    properties: {
+      type: "text/css",
+      rel: "stylesheet",
+      href: `chrome://${addon.data.config.addonRef}/content/zoteroPane.css`,
+    },
+  });
   doc.documentElement?.appendChild(link);
+
+  // 启动本地代理服务器
+  const proxyPort =
+    (Zotero.Prefs.get("extensions.clautero.proxyPort", true) as number) ||
+    23121;
+  proxyServer = new ProxyServer(proxyPort);
+  try {
+    proxyServer.start();
+  } catch (e) {
+    Zotero.debug(`[Clautero] Failed to start proxy server: ${e}`);
+  }
 
   // 注册侧边栏面板并获取 nonce
   const nonce = registerSidebarPanel();
 
-  // 初始化 MessageBridge（延迟到 iframe 加载完成后 attach）
+  // 初始化 MessageBridge
   messageBridge = new MessageBridge(nonce);
+
+  // 设置回调：iframe 渲染后 attach MessageBridge
+  setOnRenderCallback((browser: HTMLIFrameElement) => {
+    if (messageBridge) {
+      messageBridge.attach(browser);
+    }
+  });
 
   // 显示加载通知
   const popupWin = new ztoolkit.ProgressWindow(addon.data.config.addonName, {
@@ -107,6 +132,11 @@ function onShutdown(): void {
   if (messageBridge) {
     messageBridge.detach();
     messageBridge = null;
+  }
+
+  if (proxyServer) {
+    proxyServer.stop();
+    proxyServer = null;
   }
 
   unregisterSidebarPanel();
