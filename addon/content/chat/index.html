@@ -8,11 +8,16 @@
 </head>
 <body>
   <div class="chat-container">
-    <!-- Toolbar -->
-    <div class="chat-toolbar">
-      <span class="chat-toolbar-title">Clautero</span>
-      <div class="chat-toolbar-actions">
-        <button class="btn-icon" id="new-chat-btn" title="New conversation">+</button>
+    <!-- Header -->
+    <div class="chat-header">
+      <span class="chat-header-title">Clautero</span>
+      <div class="chat-header-actions">
+        <button class="btn-icon" id="new-chat-btn" title="New conversation">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="btn-icon" id="history-btn" title="History">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </button>
       </div>
     </div>
 
@@ -38,15 +43,22 @@
 
     <!-- Input Area -->
     <div class="chat-input-area">
-      <div class="chat-input-wrapper">
+      <div class="chat-input-container">
         <textarea
           class="chat-textarea"
           id="chat-input"
           placeholder="Ask about your research..."
           rows="1"
         ></textarea>
-        <button class="btn-cancel" id="cancel-btn" title="Cancel" style="display:none;">&#x2715;</button>
-        <button class="btn-send" id="send-btn" title="Send">&#x2191;</button>
+        <div class="chat-input-toolbar">
+          <div class="chat-input-info">
+            <span class="chat-input-model">Claude</span>
+          </div>
+          <div class="chat-input-actions">
+            <button class="btn-cancel" id="cancel-btn" title="Cancel" style="display:none;">&#x2715;</button>
+            <button class="btn-send" id="send-btn" title="Send">&#x2191;</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

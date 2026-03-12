@@ -8,6 +8,8 @@ export class MessageRenderer {
   }
 
   addUserMessage(text: string): void {
+    this.removeWelcomeScreen();
+
     const msgEl = document.createElement("div");
     msgEl.className = "message message-user";
 
@@ -21,17 +23,19 @@ export class MessageRenderer {
   }
 
   startAssistantMessage(): void {
+    this.removeWelcomeScreen();
+
     const msgEl = document.createElement("div");
     msgEl.className = "message message-assistant";
 
     const contentEl = document.createElement("div");
     contentEl.className = "message-content";
 
-    // 加载动画
-    const loader = document.createElement("div");
-    loader.className = "typing-indicator";
-    loader.innerHTML = "<span></span><span></span><span></span>";
-    contentEl.appendChild(loader);
+    // Thinking indicator (Claudian-style)
+    const thinking = document.createElement("div");
+    thinking.className = "thinking-indicator";
+    thinking.textContent = "Thinking...";
+    contentEl.appendChild(thinking);
 
     msgEl.appendChild(contentEl);
     this.container.appendChild(msgEl);
@@ -43,31 +47,31 @@ export class MessageRenderer {
   appendAssistantDelta(text: string): void {
     if (!this.currentContentEl) return;
 
-    // 移除加载动画
-    const loader = this.currentContentEl.querySelector(".typing-indicator");
-    if (loader) loader.remove();
+    // Remove thinking indicator on first delta
+    const thinking = this.currentContentEl.querySelector(".thinking-indicator");
+    if (thinking) thinking.remove();
 
-    // 简单文本追加（Step 3 中替换为 Markdown 渲染）
-    // 为了避免 HTML 注入，使用 textContent 追加
+    // Simple text append (will be replaced with Markdown rendering in later step)
     const existingText = this.currentContentEl.textContent || "";
     this.currentContentEl.textContent = existingText + text;
     this.scrollToBottom();
   }
 
   finalizeAssistantMessage(): void {
-    // Step 3 中这里会做完整的 Markdown 渲染
-    // 目前已经是纯文本
-    const loader = this.currentContentEl?.querySelector(".typing-indicator");
-    if (loader) loader.remove();
+    // Remove thinking indicator if still present (empty response)
+    const thinking = this.currentContentEl?.querySelector(".thinking-indicator");
+    if (thinking) thinking.remove();
 
     this.currentAssistantEl = null;
     this.currentContentEl = null;
   }
 
   /**
-   * 渲染已恢复的 assistant 消息（从历史加载）
+   * Render a restored assistant message (loaded from history)
    */
   addRestoredAssistantMessage(text: string): void {
+    this.removeWelcomeScreen();
+
     const msgEl = document.createElement("div");
     msgEl.className = "message message-assistant";
 
@@ -105,7 +109,7 @@ export class MessageRenderer {
   }
 
   /**
-   * 显示带倒计时的错误（429 Rate Limit 场景）
+   * Show error with countdown (429 Rate Limit scenario)
    */
   showErrorWithCountdown(
     error: string,
@@ -141,7 +145,7 @@ export class MessageRenderer {
   }
 
   /**
-   * 更新历史对话面板
+   * Update history panel
    */
   updateHistoryPanel(
     conversations: Array<{
@@ -173,7 +177,7 @@ export class MessageRenderer {
       const meta = document.createElement("span");
       meta.className = "history-meta";
       const date = new Date(conv.updatedAt);
-      meta.textContent = `${date.toLocaleDateString()} · ${conv.messageCount} msgs`;
+      meta.textContent = `${date.toLocaleDateString()} \u00B7 ${conv.messageCount} msgs`;
 
       item.appendChild(title);
       item.appendChild(meta);
@@ -198,13 +202,41 @@ export class MessageRenderer {
     }
 
     if (status === "running") {
-      toolEl.innerHTML = `<span class="tool-icon">&#9881;</span> Using tool: ${this.escapeHtml(name)}...`;
-      toolEl.classList.add("tool-running");
-      toolEl.classList.remove("tool-completed");
+      toolEl.className = "tool-status tool-running";
+      toolEl.innerHTML = "";
+
+      const icon = document.createElement("span");
+      icon.className = "tool-icon";
+      icon.textContent = "\u25CF"; // filled circle, will pulse via CSS
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "tool-name";
+      nameSpan.textContent = this.escapeHtml(name);
+
+      const dots = document.createElement("span");
+      dots.textContent = "...";
+
+      toolEl.appendChild(icon);
+      toolEl.appendChild(nameSpan);
+      toolEl.appendChild(dots);
     } else {
-      toolEl.innerHTML = `<span class="tool-icon">&#10003;</span> ${this.escapeHtml(name)}: ${this.escapeHtml(summary || "Done")}`;
-      toolEl.classList.remove("tool-running");
-      toolEl.classList.add("tool-completed");
+      toolEl.className = "tool-status tool-completed";
+      toolEl.innerHTML = "";
+
+      const icon = document.createElement("span");
+      icon.className = "tool-icon";
+      icon.textContent = "\u2713"; // checkmark
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "tool-name";
+      nameSpan.textContent = this.escapeHtml(name);
+
+      const summarySpan = document.createElement("span");
+      summarySpan.textContent = " \u2014 " + this.escapeHtml(summary || "Done");
+
+      toolEl.appendChild(icon);
+      toolEl.appendChild(nameSpan);
+      toolEl.appendChild(summarySpan);
     }
 
     this.scrollToBottom();
@@ -233,6 +265,11 @@ export class MessageRenderer {
     this.container.innerHTML = "";
     this.currentAssistantEl = null;
     this.currentContentEl = null;
+  }
+
+  private removeWelcomeScreen(): void {
+    const welcome = this.container.querySelector("#welcome-screen");
+    if (welcome) welcome.remove();
   }
 
   private scrollToBottom(): void {
