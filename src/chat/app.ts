@@ -19,6 +19,22 @@ interface ConversationSummary {
   messageCount: number;
 }
 
+interface SlashCommand {
+  name: string;
+  desc: string;
+}
+
+const SLASH_COMMANDS: SlashCommand[] = [
+  { name: "/summarize", desc: "总结选中的论文" },
+  { name: "/analyze", desc: "分析论文方法论和结论" },
+  { name: "/cite", desc: "生成引用格式" },
+  { name: "/compare", desc: "比较多篇论文" },
+  { name: "/extract", desc: "提取关键数据和发现" },
+  { name: "/translate", desc: "翻译选中内容" },
+  { name: "/notes", desc: "整理研究笔记" },
+  { name: "/review", desc: "文献综述助手" },
+];
+
 class ChatApp {
   private messages: Message[] = [];
   private renderer: MessageRenderer;
@@ -27,18 +43,30 @@ class ChatApp {
   private currentAssistantContent = "";
   private lastUserText = "";
 
+  private textarea: HTMLTextAreaElement;
+  private sendBtn: HTMLButtonElement;
+  private slashPopup: HTMLElement | null = null;
+  private slashSelectedIndex = 0;
+  private filteredCommands: SlashCommand[] = [];
+
   constructor() {
+    this.textarea = document.getElementById(
+      "chat-input",
+    ) as HTMLTextAreaElement;
+    this.sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
+
     this.renderer = new MessageRenderer(
       document.getElementById("message-list")!,
     );
     this.inputHandler = new InputHandler(
-      document.getElementById("chat-input") as HTMLTextAreaElement,
-      document.getElementById("send-btn") as HTMLButtonElement,
-      document.getElementById("cancel-btn") as HTMLButtonElement,
+      this.textarea,
+      this.sendBtn,
     );
 
     this.setupEventListeners();
     this.setupMessageListener();
+    this.setupSlashCommands();
+    this.setupResizeHandle();
 
     // 启动时请求对话列表
     this.postToMain({ type: "list_conversations" });
@@ -52,17 +80,154 @@ class ChatApp {
     if (newChatBtn) {
       newChatBtn.addEventListener("click", () => this.clearConversation());
     }
+  }
 
-    // 上下文预览折叠
-    const contextToggle = document.getElementById("context-toggle");
-    const contextBody = document.getElementById("context-body");
-    if (contextToggle && contextBody) {
-      contextToggle.addEventListener("click", () => {
-        contextBody.classList.toggle("collapsed");
-        contextToggle.classList.toggle("expanded");
-      });
+  // ── 斜杠命令 ──────────────────────────────────────────
+
+  private setupSlashCommands(): void {
+    this.textarea.addEventListener("input", () => this.onSlashInput());
+    this.textarea.addEventListener("keydown", (e) =>
+      this.onSlashKeydown(e),
+    );
+    this.textarea.addEventListener("blur", () => {
+      // 延迟关闭，以便点击事件能先触发
+      setTimeout(() => this.dismissSlashPopup(), 150);
+    });
+  }
+
+  private onSlashInput(): void {
+    const value = this.textarea.value;
+    if (value.startsWith("/")) {
+      const query = value.slice(1).toLowerCase();
+      this.filteredCommands = SLASH_COMMANDS.filter(
+        (cmd) =>
+          cmd.name.toLowerCase().includes(query) ||
+          cmd.desc.toLowerCase().includes(query),
+      );
+      if (this.filteredCommands.length > 0) {
+        this.slashSelectedIndex = 0;
+        this.showSlashPopup();
+        return;
+      }
+    }
+    this.dismissSlashPopup();
+  }
+
+  private onSlashKeydown(e: KeyboardEvent): void {
+    if (!this.slashPopup) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      this.slashSelectedIndex = Math.min(
+        this.slashSelectedIndex + 1,
+        this.filteredCommands.length - 1,
+      );
+      this.renderSlashItems();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      this.slashSelectedIndex = Math.max(this.slashSelectedIndex - 1, 0);
+      this.renderSlashItems();
+    } else if (e.key === "Enter" && !e.shiftKey) {
+      if (this.filteredCommands.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.selectSlashCommand(this.slashSelectedIndex);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      this.dismissSlashPopup();
     }
   }
+
+  private showSlashPopup(): void {
+    if (!this.slashPopup) {
+      this.slashPopup = document.createElement("div");
+      this.slashPopup.className = "claudian-slash-popup";
+      // 插入到 input-wrapper 中，定位在 textarea 上方
+      const wrapper = document.getElementById("input-wrapper");
+      if (wrapper) {
+        wrapper.style.position = "relative";
+        wrapper.appendChild(this.slashPopup);
+      } else {
+        document.body.appendChild(this.slashPopup);
+      }
+    }
+    this.renderSlashItems();
+    this.slashPopup.style.display = "block";
+  }
+
+  private renderSlashItems(): void {
+    if (!this.slashPopup) return;
+    this.slashPopup.innerHTML = "";
+    this.filteredCommands.forEach((cmd, i) => {
+      const item = document.createElement("div");
+      item.className =
+        "claudian-slash-item" +
+        (i === this.slashSelectedIndex ? " claudian-slash-item-active" : "");
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "claudian-slash-item-name";
+      nameSpan.textContent = cmd.name;
+      const descSpan = document.createElement("span");
+      descSpan.className = "claudian-slash-item-desc";
+      descSpan.textContent = cmd.desc;
+      item.appendChild(nameSpan);
+      item.appendChild(descSpan);
+      item.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // 防止 blur 先触发
+        this.selectSlashCommand(i);
+      });
+      this.slashPopup!.appendChild(item);
+    });
+  }
+
+  private selectSlashCommand(index: number): void {
+    const cmd = this.filteredCommands[index];
+    if (!cmd) return;
+    this.textarea.value = cmd.name + " ";
+    this.textarea.focus();
+    this.dismissSlashPopup();
+  }
+
+  private dismissSlashPopup(): void {
+    if (this.slashPopup) {
+      this.slashPopup.style.display = "none";
+    }
+  }
+
+  // ── Resize handle ────────────────────────────────────
+
+  private setupResizeHandle(): void {
+    const handle = document.getElementById("resize-handle");
+    const wrapper = document.getElementById("input-wrapper");
+    if (!handle || !wrapper) return;
+
+    let startY = 0;
+    let startHeight = 0;
+
+    handle.addEventListener("mousedown", (e: MouseEvent) => {
+      startY = e.clientY;
+      startHeight = wrapper.offsetHeight;
+      const onMove = (ev: MouseEvent) => {
+        const delta = startY - ev.clientY;
+        wrapper.style.height =
+          Math.max(90, Math.min(300, startHeight + delta)) + "px";
+      };
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+  }
+
+  // ── 发送按钮状态切换（委托给 InputHandler）──────────
+
+  private setStreamingUI(streaming: boolean): void {
+    this.inputHandler.setStreamingState(streaming);
+  }
+
+  // ── 消息逻辑 ─────────────────────────────────────────
 
   private setupMessageListener(): void {
     window.addEventListener("message", (event) => {
@@ -118,7 +283,7 @@ class ChatApp {
       text,
     });
 
-    this.inputHandler.setStreamingState(true);
+    this.setStreamingUI(true);
     this.renderer.startAssistantMessage();
   }
 
@@ -129,7 +294,8 @@ class ChatApp {
         requestId: this.currentRequestId,
       });
     }
-    this.inputHandler.setStreamingState(false);
+    this.renderer.finalizeAssistantMessage();
+    this.setStreamingUI(false);
     this.currentRequestId = null;
   }
 
@@ -140,7 +306,7 @@ class ChatApp {
     this.currentRequestId = null;
     this.currentAssistantContent = "";
     this.lastUserText = "";
-    this.inputHandler.setStreamingState(false);
+    this.setStreamingUI(false);
   }
 
   private handleStreamDelta(data: {
@@ -159,7 +325,7 @@ class ChatApp {
       content: this.currentAssistantContent,
     });
     this.renderer.finalizeAssistantMessage();
-    this.inputHandler.setStreamingState(false);
+    this.setStreamingUI(false);
     this.currentRequestId = null;
   }
 
@@ -170,6 +336,8 @@ class ChatApp {
     retryAfterSeconds?: number;
   }): void {
     if (data.requestId !== this.currentRequestId) return;
+
+    this.renderer.finalizeAssistantMessage();
 
     if (data.retryAfterSeconds && data.retryAfterSeconds > 0) {
       this.renderer.showErrorWithCountdown(
@@ -185,14 +353,12 @@ class ChatApp {
       );
     }
 
-    this.inputHandler.setStreamingState(false);
+    this.setStreamingUI(false);
     this.currentRequestId = null;
   }
 
   private retryLastMessage(): void {
     if (this.lastUserText) {
-      // 移除上一条失败的用户消息（主进程侧已保留）
-      // 重新发送
       this.currentRequestId = this.generateId();
       this.currentAssistantContent = "";
 
@@ -202,7 +368,7 @@ class ChatApp {
         text: this.lastUserText,
       });
 
-      this.inputHandler.setStreamingState(true);
+      this.setStreamingUI(true);
       this.renderer.startAssistantMessage();
     }
   }
