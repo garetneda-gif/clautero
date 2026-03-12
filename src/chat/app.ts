@@ -12,12 +12,20 @@ interface Message {
   toolCalls?: Array<{ name: string; status: string }>;
 }
 
+interface ConversationSummary {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messageCount: number;
+}
+
 class ChatApp {
   private messages: Message[] = [];
   private renderer: MessageRenderer;
   private inputHandler: InputHandler;
   private currentRequestId: string | null = null;
   private currentAssistantContent = "";
+  private lastUserText = "";
 
   constructor() {
     this.renderer = new MessageRenderer(
@@ -31,6 +39,9 @@ class ChatApp {
 
     this.setupEventListeners();
     this.setupMessageListener();
+
+    // 启动时请求对话列表
+    this.postToMain({ type: "list_conversations" });
   }
 
   private setupEventListeners(): void {
@@ -57,7 +68,6 @@ class ChatApp {
     window.addEventListener("message", (event) => {
       const data = event.data;
       if (!data || data.v !== PROTOCOL_VERSION || data.nonce !== NONCE) return;
-      // 只接受 parent 窗口的消息
       if (event.source !== window.parent) return;
 
       switch (data.type) {
@@ -82,6 +92,12 @@ class ChatApp {
         case "context_updated":
           this.handleContextUpdated(data);
           break;
+        case "history_loaded":
+          this.handleHistoryLoaded(data);
+          break;
+        case "conversation_list":
+          this.handleConversationList(data);
+          break;
       }
     });
   }
@@ -91,19 +107,17 @@ class ChatApp {
 
     this.currentRequestId = this.generateId();
     this.currentAssistantContent = "";
+    this.lastUserText = text;
 
-    // 添加用户消息
     this.messages.push({ role: "user", content: text });
     this.renderer.addUserMessage(text);
 
-    // 发送给主进程
     this.postToMain({
       type: "user_message",
       requestId: this.currentRequestId,
       text,
     });
 
-    // 切换到流式状态
     this.inputHandler.setStreamingState(true);
     this.renderer.startAssistantMessage();
   }
@@ -125,6 +139,7 @@ class ChatApp {
     this.renderer.clear();
     this.currentRequestId = null;
     this.currentAssistantContent = "";
+    this.lastUserText = "";
     this.inputHandler.setStreamingState(false);
   }
 
@@ -152,11 +167,44 @@ class ChatApp {
     requestId: string;
     error: string;
     retryable: boolean;
+    retryAfterSeconds?: number;
   }): void {
     if (data.requestId !== this.currentRequestId) return;
-    this.renderer.showError(data.error, data.retryable);
+
+    if (data.retryAfterSeconds && data.retryAfterSeconds > 0) {
+      this.renderer.showErrorWithCountdown(
+        data.error,
+        data.retryAfterSeconds,
+        () => this.retryLastMessage(),
+      );
+    } else {
+      this.renderer.showError(
+        data.error,
+        data.retryable,
+        data.retryable ? () => this.retryLastMessage() : undefined,
+      );
+    }
+
     this.inputHandler.setStreamingState(false);
     this.currentRequestId = null;
+  }
+
+  private retryLastMessage(): void {
+    if (this.lastUserText) {
+      // 移除上一条失败的用户消息（主进程侧已保留）
+      // 重新发送
+      this.currentRequestId = this.generateId();
+      this.currentAssistantContent = "";
+
+      this.postToMain({
+        type: "user_message",
+        requestId: this.currentRequestId,
+        text: this.lastUserText,
+      });
+
+      this.inputHandler.setStreamingState(true);
+      this.renderer.startAssistantMessage();
+    }
   }
 
   private handleToolStart(data: {
@@ -187,6 +235,36 @@ class ChatApp {
   private handleContextUpdated(data: { summary: string }): void {
     const badge = document.getElementById("context-badge");
     if (badge) badge.textContent = data.summary;
+  }
+
+  private handleHistoryLoaded(data: {
+    conversation: {
+      id: string;
+      messages: Array<{ role: string; content: string }>;
+    } | null;
+  }): void {
+    if (!data.conversation) return;
+
+    this.renderer.clear();
+    this.messages = [];
+
+    for (const msg of data.conversation.messages) {
+      if (msg.role === "user") {
+        this.messages.push({ role: "user", content: msg.content });
+        this.renderer.addUserMessage(msg.content);
+      } else if (msg.role === "assistant") {
+        this.messages.push({ role: "assistant", content: msg.content });
+        this.renderer.addRestoredAssistantMessage(msg.content);
+      }
+    }
+  }
+
+  private handleConversationList(data: {
+    conversations: ConversationSummary[];
+  }): void {
+    this.renderer.updateHistoryPanel(data.conversations, (id) => {
+      this.postToMain({ type: "load_history", conversationId: id });
+    });
   }
 
   private postToMain(msg: Record<string, unknown>): void {

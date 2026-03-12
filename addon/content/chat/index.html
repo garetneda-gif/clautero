@@ -12,12 +12,15 @@
     <div class="chat-toolbar">
       <span class="chat-toolbar-title">Clautero</span>
       <div class="chat-toolbar-actions">
-        <button class="btn-icon" id="btn-new-chat" title="New conversation">+</button>
+        <button class="btn-icon" id="new-chat-btn" title="New conversation">+</button>
       </div>
     </div>
 
+    <!-- History Panel (toggleable) -->
+    <div class="history-panel" id="history-panel"></div>
+
     <!-- Messages -->
-    <div class="chat-messages" id="chat-messages">
+    <div class="chat-messages" id="message-list">
       <div class="welcome" id="welcome-screen">
         <div class="welcome-title">Clautero</div>
         <div class="welcome-subtitle">AI research assistant powered by Claude. Select items in Zotero and start a conversation.</div>
@@ -26,11 +29,11 @@
 
     <!-- Context Preview -->
     <div class="context-preview collapsed context-hidden" id="context-preview">
-      <div class="context-header" id="context-header">
-        <span id="context-label"></span>
-        <span class="context-toggle">&#9662;</span>
+      <div class="context-header" id="context-toggle">
+        <span id="context-badge"></span>
+        <span class="context-toggle-icon">&#9662;</span>
       </div>
-      <div class="context-items" id="context-items"></div>
+      <div class="context-items" id="context-body"></div>
     </div>
 
     <!-- Input Area -->
@@ -42,8 +45,8 @@
           placeholder="Ask about your research..."
           rows="1"
         ></textarea>
-        <button class="btn-cancel" id="btn-cancel" title="Cancel">&#x2715;</button>
-        <button class="btn-send" id="btn-send" title="Send">&#x2191;</button>
+        <button class="btn-cancel" id="cancel-btn" title="Cancel" style="display:none;">&#x2715;</button>
+        <button class="btn-send" id="send-btn" title="Send">&#x2191;</button>
       </div>
     </div>
   </div>

@@ -64,24 +64,121 @@ export class MessageRenderer {
     this.currentContentEl = null;
   }
 
-  showError(error: string, retryable: boolean): void {
+  /**
+   * 渲染已恢复的 assistant 消息（从历史加载）
+   */
+  addRestoredAssistantMessage(text: string): void {
+    const msgEl = document.createElement("div");
+    msgEl.className = "message message-assistant";
+
+    const contentEl = document.createElement("div");
+    contentEl.className = "message-content";
+    contentEl.textContent = text;
+
+    msgEl.appendChild(contentEl);
+    this.container.appendChild(msgEl);
+    this.scrollToBottom();
+  }
+
+  showError(
+    error: string,
+    retryable: boolean,
+    onRetry?: () => void,
+  ): void {
     const errEl = document.createElement("div");
     errEl.className = "message message-error";
     errEl.textContent = error;
 
-    if (retryable) {
+    if (retryable && onRetry) {
       const retryBtn = document.createElement("button");
       retryBtn.className = "retry-btn";
       retryBtn.textContent = "Retry";
       retryBtn.addEventListener("click", () => {
-        // 重试逻辑由 ChatApp 处理
         errEl.remove();
+        onRetry();
       });
       errEl.appendChild(retryBtn);
     }
 
     this.container.appendChild(errEl);
     this.scrollToBottom();
+  }
+
+  /**
+   * 显示带倒计时的错误（429 Rate Limit 场景）
+   */
+  showErrorWithCountdown(
+    error: string,
+    seconds: number,
+    onRetry: () => void,
+  ): void {
+    const errEl = document.createElement("div");
+    errEl.className = "message message-error";
+
+    const textSpan = document.createElement("span");
+    textSpan.textContent = error;
+    errEl.appendChild(textSpan);
+
+    const countdownSpan = document.createElement("span");
+    countdownSpan.className = "countdown";
+    countdownSpan.textContent = ` (retry in ${seconds}s)`;
+    errEl.appendChild(countdownSpan);
+
+    this.container.appendChild(errEl);
+    this.scrollToBottom();
+
+    let remaining = seconds;
+    const timer = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        errEl.remove();
+        onRetry();
+      } else {
+        countdownSpan.textContent = ` (retry in ${remaining}s)`;
+      }
+    }, 1000);
+  }
+
+  /**
+   * 更新历史对话面板
+   */
+  updateHistoryPanel(
+    conversations: Array<{
+      id: string;
+      title: string;
+      updatedAt: number;
+      messageCount: number;
+    }>,
+    onSelect: (id: string) => void,
+  ): void {
+    const panel = document.getElementById("history-panel");
+    if (!panel) return;
+
+    if (conversations.length === 0) {
+      panel.innerHTML = '<p class="history-empty">No saved conversations</p>';
+      return;
+    }
+
+    panel.innerHTML = "";
+    for (const conv of conversations.slice(0, 20)) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.addEventListener("click", () => onSelect(conv.id));
+
+      const title = document.createElement("span");
+      title.className = "history-title";
+      title.textContent = conv.title;
+
+      const meta = document.createElement("span");
+      meta.className = "history-meta";
+      const date = new Date(conv.updatedAt);
+      meta.textContent = `${date.toLocaleDateString()} · ${conv.messageCount} msgs`;
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      panel.appendChild(item);
+    }
   }
 
   showToolStatus(

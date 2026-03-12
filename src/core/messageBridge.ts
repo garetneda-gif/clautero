@@ -1,4 +1,4 @@
-import { ConversationManager } from "./conversationManager";
+import { ConversationManager, ClauteroError } from "./conversationManager";
 
 type RequestState = "IDLE" | "IN_FLIGHT" | "CANCELLING" | "ERROR";
 
@@ -20,7 +20,6 @@ export class MessageBridge {
   attach(iframe: HTMLIFrameElement): void {
     this.iframe = iframe;
     this.messageHandler = this.handleMessage.bind(this);
-    // 在 Zotero 主窗口上监听 message 事件
     const doc = iframe.ownerDocument;
     const win = doc?.defaultView;
     if (win) {
@@ -71,6 +70,18 @@ export class MessageBridge {
       case "get_context_preview":
         this.handleGetContextPreview();
         break;
+      case "load_history":
+        this.handleLoadHistory(data);
+        break;
+      case "list_conversations":
+        this.handleListConversations();
+        break;
+      case "delete_conversation":
+        this.handleDeleteConversation(data);
+        break;
+      case "clear_all_history":
+        this.handleClearAllHistory();
+        break;
       default:
         Zotero.debug(`[Clautero] Unknown message type: ${data.type}`);
     }
@@ -96,14 +107,19 @@ export class MessageBridge {
       this.state = "IDLE";
     } catch (error) {
       this.state = "ERROR";
+
+      const clauteroErr = error as Partial<ClauteroError>;
       const errMsg = error instanceof Error ? error.message : String(error);
+      const retryable = clauteroErr.retryable !== false;
+
+      Zotero.debug(`[Clautero] Request error: ${errMsg}`);
+
       this.sendToIframe({
-        v: PROTOCOL_VERSION,
-        nonce: this.nonce,
         type: "stream_error",
         requestId: data.requestId,
         error: errMsg,
-        retryable: true,
+        retryable,
+        retryAfterSeconds: clauteroErr.retryAfterSeconds,
       });
     }
     this.currentRequestId = null;
@@ -116,7 +132,6 @@ export class MessageBridge {
     ) {
       this.state = "CANCELLING";
       this.conversationManager.cancelCurrentRequest();
-      // 取消完成后，handleUserMessage 的 catch/finally 会将状态重置为 IDLE
     }
   }
 
@@ -127,13 +142,69 @@ export class MessageBridge {
   }
 
   private handleGetContextPreview(): void {
-    // 将在 ContextManager 实现后补充
     this.sendToIframe({
-      v: PROTOCOL_VERSION,
-      nonce: this.nonce,
       type: "context_preview",
       items: [],
     });
+  }
+
+  private async handleLoadHistory(data: {
+    conversationId: string;
+  }): Promise<void> {
+    try {
+      const conv = await this.conversationManager.loadConversation(
+        data.conversationId,
+      );
+      this.sendToIframe({
+        type: "history_loaded",
+        conversation: conv,
+      });
+    } catch (e) {
+      Zotero.debug(`[Clautero] Failed to load history: ${e}`);
+      this.sendToIframe({
+        type: "history_loaded",
+        conversation: null,
+      });
+    }
+  }
+
+  private async handleListConversations(): Promise<void> {
+    try {
+      const list = await this.conversationManager.listConversations();
+      this.sendToIframe({
+        type: "conversation_list",
+        conversations: list,
+      });
+    } catch (e) {
+      Zotero.debug(`[Clautero] Failed to list conversations: ${e}`);
+      this.sendToIframe({
+        type: "conversation_list",
+        conversations: [],
+      });
+    }
+  }
+
+  private async handleDeleteConversation(data: {
+    conversationId: string;
+  }): Promise<void> {
+    try {
+      await this.conversationManager.deleteConversation(data.conversationId);
+      this.handleListConversations();
+    } catch (e) {
+      Zotero.debug(`[Clautero] Failed to delete conversation: ${e}`);
+    }
+  }
+
+  private async handleClearAllHistory(): Promise<void> {
+    try {
+      await this.conversationManager.clearAllHistory();
+      this.sendToIframe({
+        type: "conversation_list",
+        conversations: [],
+      });
+    } catch (e) {
+      Zotero.debug(`[Clautero] Failed to clear history: ${e}`);
+    }
   }
 
   sendToIframe(msg: Record<string, unknown>): void {
@@ -141,11 +212,9 @@ export class MessageBridge {
     const iframeWindow = (this.iframe as any).contentWindow;
     if (!iframeWindow) return;
 
-    // 确保消息携带协议版本和 nonce
     msg.nonce = this.nonce;
     msg.v = PROTOCOL_VERSION;
 
-    // targetOrigin 在 PoC 确认后设置具体值
     // TODO: PoC P1 后替换为确切 origin
     iframeWindow.postMessage(msg, "*");
   }

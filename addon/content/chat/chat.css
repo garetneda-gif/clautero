@@ -331,6 +331,171 @@ html, body {
   display: none;
 }
 
+/* ---- History Panel ---- */
+
+.history-panel {
+  flex-shrink: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--clautero-border);
+  background: var(--clautero-bg-secondary);
+}
+
+.history-panel:empty {
+  display: none;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--clautero-border);
+  transition: background 0.15s;
+}
+
+.history-item:hover {
+  background: var(--clautero-bg-tertiary);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--clautero-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-meta {
+  font-size: 10px;
+  color: var(--clautero-text-secondary);
+}
+
+.history-empty {
+  font-size: 12px;
+  color: var(--clautero-text-secondary);
+  text-align: center;
+  padding: 8px;
+}
+
+/* ---- Error Countdown ---- */
+
+.message-error .countdown {
+  font-weight: 600;
+  color: var(--clautero-error-text);
+}
+
+.retry-btn {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: 1px solid var(--clautero-error-text);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--clautero-error-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.retry-btn:hover {
+  background: var(--clautero-error-text);
+  color: #fff;
+}
+
+/* ---- Message Content (from MessageRenderer) ---- */
+
+.message-content {
+  padding: 8px 12px;
+  border-radius: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.message-user .message-content {
+  background: var(--clautero-user-bubble);
+  color: var(--clautero-user-text);
+  border-bottom-right-radius: 4px;
+}
+
+.message-assistant .message-content {
+  background: var(--clautero-ai-bubble);
+  color: var(--clautero-ai-text);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 3px var(--clautero-shadow);
+}
+
+.message-assistant {
+  align-self: flex-start;
+}
+
+.message-error {
+  align-self: center;
+  padding: 6px 12px;
+  background: var(--clautero-error-bg);
+  color: var(--clautero-error-text);
+  border-radius: 8px;
+  font-size: 12px;
+  border-left: 3px solid var(--clautero-error-text);
+}
+
+/* ---- Tool Status (from MessageRenderer) ---- */
+
+.tool-status {
+  padding: 4px 10px;
+  margin: 4px 0;
+  background: var(--clautero-tool-bg);
+  border-left: 3px solid var(--clautero-tool-border);
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  color: var(--clautero-text-secondary);
+}
+
+.tool-status.tool-running {
+  opacity: 0.8;
+}
+
+.tool-status.tool-completed {
+  opacity: 1;
+}
+
+.tool-icon {
+  margin-right: 4px;
+}
+
+/* ---- Typing Indicator ---- */
+
+.typing-indicator {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clautero-text-secondary);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
 /* ---- Input Area ---- */
 
 .chat-input-area {
