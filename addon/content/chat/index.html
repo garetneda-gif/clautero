@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clautero</title>
+  <link rel="stylesheet" href="chat.css" />
+</head>
+<body>
+  <div class="chat-container">
+    <!-- Toolbar -->
+    <div class="chat-toolbar">
+      <span class="chat-toolbar-title">Clautero</span>
+      <div class="chat-toolbar-actions">
+        <button class="btn-icon" id="btn-new-chat" title="New conversation">+</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chat-messages">
+      <div class="welcome" id="welcome-screen">
+        <div class="welcome-title">Clautero</div>
+        <div class="welcome-subtitle">AI research assistant powered by Claude. Select items in Zotero and start a conversation.</div>
+      </div>
+    </div>
+
+    <!-- Context Preview -->
+    <div class="context-preview collapsed context-hidden" id="context-preview">
+      <div class="context-header" id="context-header">
+        <span id="context-label"></span>
+        <span class="context-toggle">&#9662;</span>
+      </div>
+      <div class="context-items" id="context-items"></div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <div class="chat-input-wrapper">
+        <textarea
+          class="chat-textarea"
+          id="chat-input"
+          placeholder="Ask about your research..."
+          rows="1"
+        ></textarea>
+        <button class="btn-cancel" id="btn-cancel" title="Cancel">&#x2715;</button>
+        <button class="btn-send" id="btn-send" title="Send">&#x2191;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="chat.js"></script>
+</body>
+</html>

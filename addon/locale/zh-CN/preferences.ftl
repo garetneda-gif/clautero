@@ -1,0 +1,15 @@
+pref-title = Clautero 设置
+pref-section-api = Claude API
+pref-api-key = API Key
+pref-api-key-placeholder = sk-ant-...
+pref-model = 模型
+pref-proxy-port = 代理端口
+pref-section-context = 上下文
+pref-auto-context =
+    .label = 自动注入选中条目上下文
+pref-section-obsidian = Obsidian 桥接
+pref-obsidian-enabled =
+    .label = 启用 Obsidian 集成
+pref-obsidian-api-key = API Key
+pref-obsidian-vault-prefix = Vault 路径前缀
+pref-help = { $name } v{ $version } — 构建于 { $time }

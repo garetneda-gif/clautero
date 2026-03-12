@@ -1,0 +1,15 @@
+pref-title = Clautero Settings
+pref-section-api = Claude API
+pref-api-key = API Key
+pref-api-key-placeholder = sk-ant-...
+pref-model = Model
+pref-proxy-port = Proxy Port
+pref-section-context = Context
+pref-auto-context =
+    .label = Auto-inject selected item context
+pref-section-obsidian = Obsidian Bridge
+pref-obsidian-enabled =
+    .label = Enable Obsidian integration
+pref-obsidian-api-key = API Key
+pref-obsidian-vault-prefix = Vault Path Prefix
+pref-help = { $name } v{ $version } — Build { $time }
