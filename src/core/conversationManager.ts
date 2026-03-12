@@ -72,6 +72,7 @@ export class ConversationManager {
       const assistantContent = await this.streamRequest(
         url,
         body,
+        apiKey,
         requestId,
         sendToIframe,
       );
@@ -99,6 +100,7 @@ export class ConversationManager {
   private streamRequest(
     url: string,
     body: string,
+    apiKey: string,
     requestId: string,
     sendToIframe: (msg: Record<string, unknown>) => void,
   ): Promise<string> {
@@ -106,6 +108,8 @@ export class ConversationManager {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url, true);
       xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("x-api-key", apiKey);
+      xhr.setRequestHeader("anthropic-version", "2023-06-01");
 
       let fullContent = "";
       let lastProcessedIndex = 0;
@@ -176,6 +180,8 @@ export class ConversationManager {
               const retryXhr = new XMLHttpRequest();
               retryXhr.open("POST", url, true);
               retryXhr.setRequestHeader("Content-Type", "application/json");
+              retryXhr.setRequestHeader("x-api-key", apiKey);
+              retryXhr.setRequestHeader("anthropic-version", "2023-06-01");
 
               retryXhr.onprogress = xhr.onprogress;
               retryXhr.onload = () => {

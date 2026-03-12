@@ -70,15 +70,23 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
   });
   doc.documentElement?.appendChild(link);
 
-  // 启动本地代理服务器
+  // 启动本地代理服务器（仅在使用内置代理端口时）
   const proxyPort =
     (Zotero.Prefs.get("extensions.clautero.proxyPort", true) as number) ||
-    23121;
-  proxyServer = new ProxyServer(proxyPort);
-  try {
-    proxyServer.start();
-  } catch (e) {
-    Zotero.debug(`[Clautero] Failed to start proxy server: ${e}`);
+    8317;
+  if (proxyPort === 23121) {
+    // 使用内置代理模式：启动 nsIHttpServer 转发到 Claude API
+    proxyServer = new ProxyServer(proxyPort);
+    try {
+      proxyServer.start();
+    } catch (e) {
+      Zotero.debug(`[Clautero] Failed to start proxy server: ${e}`);
+    }
+  } else {
+    // 使用外部代理模式（如 cliproxyapi）：跳过内置代理
+    Zotero.debug(
+      `[Clautero] Using external proxy on port ${proxyPort}, skipping internal proxy`,
+    );
   }
 
   // 注册侧边栏面板并获取 nonce
