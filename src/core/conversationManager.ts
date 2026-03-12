@@ -3,6 +3,7 @@ import {
   StoredConversation,
   StoredMessage,
 } from "./conversationStorage";
+import { ClaudeCodeService } from "../services/claude/claudeCodeService";
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -13,20 +14,26 @@ interface ConversationMessage {
 export interface ClauteroError {
   message: string;
   retryable: boolean;
-  /** 429 时的重试等待秒数 */
   retryAfterSeconds?: number;
 }
+
+type BackendMode = "claude-code" | "api";
 
 export class ConversationManager {
   private conversationId: string;
   private messages: ConversationMessage[] = [];
-  private abortController: AbortController | null = null;
   private systemPrompt: string;
   private storage: ConversationStorage;
+  private claudeCode: ClaudeCodeService;
+  private mode: BackendMode = "claude-code";
+
+  // 用于取消
+  private cancelRequested = false;
 
   constructor() {
     this.conversationId = this.generateId();
     this.storage = new ConversationStorage();
+    this.claudeCode = new ClaudeCodeService();
     this.systemPrompt = `You are Clautero, an AI research assistant embedded in Zotero. You help researchers analyze literature, summarize papers, extract insights, and manage their knowledge base. Be concise, accurate, and cite sources when available. Respond in the same language as the user's message.`;
   }
 
@@ -36,54 +43,21 @@ export class ConversationManager {
     sendToIframe: (msg: Record<string, unknown>) => void,
   ): Promise<void> {
     this.messages.push({ role: "user", content: text });
-
-    this.abortController = new AbortController();
+    this.cancelRequested = false;
 
     try {
-      const apiKey = Zotero.Prefs.get(
-        "extensions.clautero.apiKey",
-        true,
-      ) as string;
       const model =
         (Zotero.Prefs.get("extensions.clautero.model", true) as string) ||
         "claude-sonnet-4-5-20250514";
-      const proxyPort =
-        (Zotero.Prefs.get(
-          "extensions.clautero.proxyPort",
-          true,
-        ) as number) || 23121;
 
-      if (!apiKey) {
-        throw this.createError(
-          "API Key not configured. Please set it in Clautero preferences.",
-          false,
-        );
+      // 优先使用 Claude Code CLI
+      if (this.mode === "claude-code") {
+        await this.handleViaClaudeCode(text, requestId, sendToIframe, model);
+      } else {
+        await this.handleViaAPI(text, requestId, sendToIframe, model);
       }
 
-      const url = `http://127.0.0.1:${proxyPort}/v1/messages`;
-      const body = JSON.stringify({
-        model,
-        max_tokens: 4096,
-        system: this.systemPrompt,
-        messages: this.messages,
-        stream: true,
-      });
-
-      const assistantContent = await this.streamRequest(
-        url,
-        body,
-        apiKey,
-        requestId,
-        sendToIframe,
-      );
-
-      if (assistantContent) {
-        this.messages.push({ role: "assistant", content: assistantContent });
-      }
-
-      sendToIframe({ type: "stream_end", requestId });
-
-      // 异步持久化，不阻塞响应
+      // 异步持久化
       this.persistConversation().catch((e) =>
         Zotero.debug(`[Clautero] Persist failed: ${e}`),
       );
@@ -92,9 +66,143 @@ export class ConversationManager {
         return;
       }
       throw error;
-    } finally {
-      this.abortController = null;
     }
+  }
+
+  /**
+   * 通过 Claude Code CLI 处理消息（默认模式，无需 API Key）
+   */
+  private async handleViaClaudeCode(
+    text: string,
+    requestId: string,
+    sendToIframe: (msg: Record<string, unknown>) => void,
+    model: string,
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let assistantContent = "";
+
+      this.claudeCode.sendMessage(text, {
+        onTextDelta: (delta) => {
+          if (this.cancelRequested) return;
+          assistantContent += delta;
+          sendToIframe({
+            type: "stream_delta",
+            requestId,
+            text: delta,
+          });
+        },
+        onThinking: (thinking) => {
+          if (this.cancelRequested) return;
+          sendToIframe({
+            type: "thinking",
+            requestId,
+            text: thinking,
+          });
+        },
+        onToolStart: (id, name) => {
+          if (this.cancelRequested) return;
+          sendToIframe({
+            type: "tool_start",
+            requestId,
+            toolCallId: id,
+            name,
+          });
+        },
+        onToolResult: (id, name, result) => {
+          if (this.cancelRequested) return;
+          sendToIframe({
+            type: "tool_result",
+            requestId,
+            toolCallId: id,
+            name,
+            summary: result.substring(0, 200),
+          });
+        },
+        onComplete: (fullText) => {
+          if (fullText) {
+            this.messages.push({ role: "assistant", content: fullText });
+          }
+          sendToIframe({ type: "stream_end", requestId });
+          resolve();
+        },
+        onError: (errorMsg) => {
+          Zotero.debug(`[Clautero] Claude Code error: ${errorMsg}`);
+
+          // 如果 Claude Code 不可用，自动回退到 API 模式
+          if (
+            errorMsg.includes("ENOENT") ||
+            errorMsg.includes("not found") ||
+            errorMsg.includes("No such file")
+          ) {
+            Zotero.debug("[Clautero] Claude Code not found, falling back to API mode");
+            this.mode = "api";
+            // 重新尝试用 API 模式
+            this.handleViaAPI(text, requestId, sendToIframe, model)
+              .then(resolve)
+              .catch(reject);
+            return;
+          }
+
+          reject(
+            this.createError(errorMsg, true),
+          );
+        },
+      }, {
+        model,
+        systemPrompt: this.systemPrompt,
+        maxTurns: 5,
+      }).catch(reject);
+    });
+  }
+
+  /**
+   * 通过 API 代理处理消息（回退模式，需要 API Key）
+   */
+  private async handleViaAPI(
+    text: string,
+    requestId: string,
+    sendToIframe: (msg: Record<string, unknown>) => void,
+    model: string,
+  ): Promise<void> {
+    const apiKey = Zotero.Prefs.get(
+      "extensions.clautero.apiKey",
+      true,
+    ) as string;
+    const proxyPort =
+      (Zotero.Prefs.get(
+        "extensions.clautero.proxyPort",
+        true,
+      ) as number) || 8317;
+
+    if (!apiKey) {
+      throw this.createError(
+        "Claude Code not available and API Key not configured. Please install Claude Code CLI or set API Key in preferences.",
+        false,
+      );
+    }
+
+    const url = `http://127.0.0.1:${proxyPort}/v1/messages`;
+    const body = JSON.stringify({
+      model,
+      max_tokens: 4096,
+      system: this.systemPrompt,
+      messages: this.messages,
+      stream: true,
+    });
+
+    const assistantContent = await this.streamRequest(
+      url,
+      body,
+      apiKey,
+      requestId,
+      sendToIframe,
+    );
+
+    if (assistantContent) {
+      this.messages.push({ role: "assistant", content: assistantContent });
+    }
+
+    sendToIframe({ type: "stream_end", requestId });
   }
 
   private streamRequest(
@@ -113,7 +221,6 @@ export class ConversationManager {
 
       let fullContent = "";
       let lastProcessedIndex = 0;
-      let retryAttempted = false;
 
       xhr.onprogress = () => {
         const responseText = xhr.responseText || "";
@@ -139,7 +246,7 @@ export class ConversationManager {
                 });
               }
             } catch {
-              // 忽略不完整 chunk 的解析错误
+              // 忽略不完整 chunk
             }
           }
         }
@@ -151,141 +258,35 @@ export class ConversationManager {
         } else if (xhr.status === 401) {
           reject(
             this.createError(
-              "API Key invalid or expired. Please update in Clautero preferences.",
+              "API Key invalid. Please update in Clautero preferences.",
               false,
             ),
           );
         } else if (xhr.status === 429) {
-          const retryAfter = this.parseRetryAfter(xhr);
-
-          if (!retryAttempted) {
-            retryAttempted = true;
-            const waitMs = retryAfter
-              ? retryAfter * 1000
-              : 2000; // 默认 2s
-
-            Zotero.debug(
-              `[Clautero] Rate limited, retrying after ${waitMs}ms`,
-            );
-
-            // 通知 iframe 正在等待重试
-            sendToIframe({
-              type: "stream_delta",
-              requestId,
-              text: `\n\n[Rate limited, retrying in ${Math.ceil(waitMs / 1000)}s...]\n\n`,
-            });
-
-            setTimeout(() => {
-              // 重试一次
-              const retryXhr = new XMLHttpRequest();
-              retryXhr.open("POST", url, true);
-              retryXhr.setRequestHeader("Content-Type", "application/json");
-              retryXhr.setRequestHeader("x-api-key", apiKey);
-              retryXhr.setRequestHeader("anthropic-version", "2023-06-01");
-
-              retryXhr.onprogress = xhr.onprogress;
-              retryXhr.onload = () => {
-                if (retryXhr.status >= 200 && retryXhr.status < 300) {
-                  resolve(fullContent);
-                } else {
-                  const err = this.createError(
-                    `Rate limited (429). Please wait and try again.`,
-                    true,
-                    retryAfter || undefined,
-                  );
-                  reject(err);
-                }
-              };
-              retryXhr.onerror = () =>
-                reject(
-                  this.createError(
-                    "Connection failed during retry.",
-                    true,
-                  ),
-                );
-
-              if (this.abortController) {
-                this.abortController.signal.addEventListener("abort", () => {
-                  retryXhr.abort();
-                  reject(
-                    Object.assign(new Error("Aborted"), { name: "AbortError" }),
-                  );
-                });
-              }
-
-              retryXhr.send(body);
-            }, waitMs);
-          } else {
-            reject(
-              this.createError(
-                `Rate limited (429). Please wait ${retryAfter || "a moment"} seconds and try again.`,
-                true,
-                retryAfter || undefined,
-              ),
-            );
-          }
-        } else if (xhr.status === 500 || xhr.status === 502 || xhr.status === 503) {
           reject(
-            this.createError(
-              `Claude API server error (${xhr.status}). Please try again later.`,
-              true,
-            ),
+            this.createError("Rate limited. Please wait and try again.", true),
           );
         } else {
           reject(
-            this.createError(`API request failed: ${xhr.status}`, true),
+            this.createError(`API error: ${xhr.status}`, true),
           );
         }
       };
 
       xhr.onerror = () => {
-        // 连接失败：代理服务器未启动或网络断开
         if (fullContent) {
-          // 已接收到部分内容，保存并通知
-          Zotero.debug(
-            "[Clautero] Stream disconnected with partial content",
-          );
           resolve(fullContent);
         } else {
           reject(
-            this.createError(
-              "Connection failed. Please check that Clautero proxy is running.",
-              true,
-            ),
+            this.createError("Connection failed. Check proxy server.", true),
           );
         }
       };
-
-      if (this.abortController) {
-        this.abortController.signal.addEventListener("abort", () => {
-          xhr.abort();
-          reject(
-            Object.assign(new Error("Aborted"), { name: "AbortError" }),
-          );
-        });
-      }
 
       xhr.send(body);
     });
   }
 
-  /**
-   * 解析 Retry-After 响应头
-   */
-  private parseRetryAfter(xhr: XMLHttpRequest): number | null {
-    try {
-      const header = xhr.getResponseHeader("Retry-After");
-      if (!header) return null;
-      const seconds = parseInt(header, 10);
-      return isNaN(seconds) ? null : seconds;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * 创建分类错误
-   */
   private createError(
     message: string,
     retryable: boolean,
@@ -300,7 +301,8 @@ export class ConversationManager {
   }
 
   cancelCurrentRequest(): void {
-    this.abortController?.abort();
+    this.cancelRequested = true;
+    this.claudeCode.cancel();
   }
 
   clearConversation(): void {
@@ -308,9 +310,6 @@ export class ConversationManager {
     this.conversationId = this.generateId();
   }
 
-  /**
-   * 将当前对话持久化到磁盘
-   */
   async persistConversation(): Promise<void> {
     if (this.messages.length === 0) return;
 
@@ -331,9 +330,6 @@ export class ConversationManager {
     await this.storage.save(conversation);
   }
 
-  /**
-   * 从磁盘加载对话历史
-   */
   async loadConversation(
     conversationId: string,
   ): Promise<StoredConversation | null> {
@@ -348,29 +344,19 @@ export class ConversationManager {
     return conv;
   }
 
-  /**
-   * 列出所有已保存的对话
-   */
   async listConversations(): Promise<
     Array<{ id: string; title: string; updatedAt: number; messageCount: number }>
   > {
     return this.storage.listConversations();
   }
 
-  /**
-   * 删除指定对话
-   */
   async deleteConversation(conversationId: string): Promise<void> {
     await this.storage.deleteConversation(conversationId);
-    // 如果删除的是当前对话，重置
     if (conversationId === this.conversationId) {
       this.clearConversation();
     }
   }
 
-  /**
-   * 清除所有对话历史
-   */
   async clearAllHistory(): Promise<void> {
     await this.storage.clearAll();
     this.clearConversation();
@@ -392,5 +378,9 @@ export class ConversationManager {
 
   getMessages(): ConversationMessage[] {
     return [...this.messages];
+  }
+
+  getMode(): BackendMode {
+    return this.mode;
   }
 }
