@@ -224,19 +224,19 @@ export class MessageRenderer {
     const panel = document.getElementById("history-panel");
     if (!panel) return;
     if (conversations.length === 0) {
-      panel.innerHTML = '<p class="history-empty">暂无对话记录</p>';
+      panel.innerHTML = '<p class="claudian-history-empty">暂无对话记录</p>';
       return;
     }
     panel.innerHTML = "";
     for (const conv of conversations.slice(0, 20)) {
       const item = document.createElement("div");
-      item.className = "history-item";
+      item.className = "claudian-history-item";
       item.addEventListener("click", () => onSelect(conv.id));
       const title = document.createElement("span");
-      title.className = "history-title";
+      title.className = "claudian-history-title";
       title.textContent = conv.title;
       const meta = document.createElement("span");
-      meta.className = "history-meta";
+      meta.className = "claudian-history-meta";
       const date = new Date(conv.updatedAt);
       meta.textContent = `${date.toLocaleDateString()} \u00B7 ${conv.messageCount} 条消息`;
       item.appendChild(title);
@@ -255,30 +255,30 @@ export class MessageRenderer {
     ) as HTMLElement;
     if (!toolEl) {
       toolEl = document.createElement("div");
-      toolEl.className = "tool-status";
+      toolEl.className = "claudian-tool-status";
       toolEl.dataset.toolName = name;
       this.container.appendChild(toolEl);
     }
     if (status === "running") {
-      toolEl.className = "tool-status tool-running";
+      toolEl.className = "claudian-tool-status claudian-tool-running";
       toolEl.innerHTML = "";
       const icon = document.createElement("span");
-      icon.className = "tool-icon";
+      icon.className = "claudian-tool-icon";
       icon.textContent = "\u25CF";
       const nameSpan = document.createElement("span");
-      nameSpan.className = "tool-name";
+      nameSpan.className = "claudian-tool-name";
       nameSpan.textContent = this.escapeHtml(name);
       toolEl.appendChild(icon);
       toolEl.appendChild(nameSpan);
       toolEl.appendChild(document.createTextNode("..."));
     } else {
-      toolEl.className = "tool-status tool-completed";
+      toolEl.className = "claudian-tool-status claudian-tool-completed";
       toolEl.innerHTML = "";
       const icon = document.createElement("span");
-      icon.className = "tool-icon";
+      icon.className = "claudian-tool-icon";
       icon.textContent = "\u2713";
       const nameSpan = document.createElement("span");
-      nameSpan.className = "tool-name";
+      nameSpan.className = "claudian-tool-name";
       nameSpan.textContent = this.escapeHtml(name);
       const summarySpan = document.createElement("span");
       summarySpan.textContent =

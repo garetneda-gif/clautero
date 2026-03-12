@@ -61,7 +61,43 @@ export class ClaudeCodeService {
   private currentProcess: { kill: () => void } | null = null;
 
   constructor(claudePath?: string) {
-    this.claudePath = claudePath || "/Users/jikunren/.local/bin/claude";
+    this.claudePath = claudePath || this.findClaudePath();
+  }
+
+  private findClaudePath(): string {
+    // 常见的 claude CLI 安装路径
+    const candidates = [
+      "/usr/local/bin/claude",
+      "/opt/homebrew/bin/claude",
+    ];
+
+    // 优先使用 HOME 目录下的安装
+    try {
+      const home = Cc["@mozilla.org/process/environment;1"]
+        .getService(Ci.nsIEnvironment)
+        .get("HOME");
+      if (home) {
+        candidates.unshift(`${home}/.local/bin/claude`);
+        candidates.push(`${home}/.claude/local/claude`);
+      }
+    } catch {
+      // 降级为硬编码路径
+    }
+
+    for (const path of candidates) {
+      try {
+        const file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        file.initWithPath(path);
+        if (file.exists() && file.isExecutable()) {
+          return path;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    // 返回最常见的路径，让 Subprocess 在运行时报错
+    return candidates[0] || "/usr/local/bin/claude";
   }
 
   /**
@@ -108,6 +144,7 @@ export class ClaudeCodeService {
       const proc = await Subprocess.call({
         command: this.claudePath,
         arguments: args,
+        environmentAppend: true,
         environment: this.getEnvironment(),
         stderr: "pipe",
       });
@@ -259,12 +296,9 @@ export class ClaudeCodeService {
    * 获取进程环境变量
    */
   private getEnvironment(): Record<string, string> {
-    const env: Record<string, string> = {
+    return {
       CLAUDE_CODE_ENTRYPOINT: "sdk-ts",
-      HOME: PathUtils.join("/Users", "jikunren"),
-      PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/jikunren/.local/bin:/opt/homebrew/bin",
     };
-    return env;
   }
 
   /**
@@ -278,6 +312,8 @@ export class ClaudeCodeService {
       const proc = await Subprocess.call({
         command: this.claudePath,
         arguments: ["--version"],
+        environmentAppend: true,
+        environment: this.getEnvironment(),
         stderr: "pipe",
       });
       const output = await proc.stdout.readString();

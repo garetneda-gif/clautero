@@ -1,7 +1,6 @@
 export class InputHandler {
   private textarea: HTMLTextAreaElement;
   private sendBtn: HTMLButtonElement;
-  private cancelBtn: HTMLButtonElement;
   private sendCallback: ((text: string) => void) | null = null;
   private cancelCallback: (() => void) | null = null;
   private isStreaming = false;
@@ -9,23 +8,24 @@ export class InputHandler {
   constructor(
     textarea: HTMLTextAreaElement,
     sendBtn: HTMLButtonElement,
-    cancelBtn: HTMLButtonElement,
   ) {
     this.textarea = textarea;
     this.sendBtn = sendBtn;
-    this.cancelBtn = cancelBtn;
     this.setupListeners();
   }
 
   private setupListeners(): void {
-    this.sendBtn.addEventListener("click", () => this.send());
-    this.cancelBtn.addEventListener("click", () => this.cancel());
+    this.sendBtn.addEventListener("click", () => this.handleButtonClick());
 
     this.textarea.addEventListener("keydown", (e) => {
       // Enter 发送，Shift+Enter 换行
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        this.send();
+        if (this.isStreaming) {
+          this.cancel();
+        } else {
+          this.send();
+        }
       }
     });
 
@@ -35,6 +35,14 @@ export class InputHandler {
       this.textarea.style.height =
         Math.min(this.textarea.scrollHeight, 150) + "px";
     });
+  }
+
+  private handleButtonClick(): void {
+    if (this.isStreaming) {
+      this.cancel();
+    } else {
+      this.send();
+    }
   }
 
   private send(): void {
@@ -61,11 +69,15 @@ export class InputHandler {
 
   setStreamingState(streaming: boolean): void {
     this.isStreaming = streaming;
-    this.sendBtn.style.display = streaming ? "none" : "";
-    this.cancelBtn.style.display = streaming ? "" : "none";
-    this.textarea.disabled = streaming;
 
-    if (!streaming) {
+    if (streaming) {
+      this.sendBtn.textContent = "停止";
+      this.sendBtn.classList.add("is-stop");
+      this.textarea.disabled = true;
+    } else {
+      this.sendBtn.textContent = "发送";
+      this.sendBtn.classList.remove("is-stop");
+      this.textarea.disabled = false;
       this.textarea.focus();
     }
   }

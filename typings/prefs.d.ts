@@ -7,13 +7,16 @@
 declare namespace _ZoteroTypes {
   interface Prefs {
     PluginPrefsMap: {
-      "apiKey": string;
+      "language": string;
+      "username": string;
+      "customInstructions": string;
+      "excludedTags": string;
+      "claudePath": string;
       "model": string;
+      "maxTurns": number;
+      "apiKey": string;
       "proxyPort": number;
       "autoContext": boolean;
-      "obsidian.enabled": boolean;
-      "obsidian.apiKey": string;
-      "obsidian.vaultPrefix": string;
     };
   }
 }

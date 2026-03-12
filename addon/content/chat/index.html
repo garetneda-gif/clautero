@@ -7,58 +7,57 @@
   <link rel="stylesheet" href="chat.css" />
 </head>
 <body>
-  <div class="chat-container">
+  <div class="claudian-container">
     <!-- Header -->
-    <div class="chat-header">
-      <span class="chat-header-title">Clautero</span>
-      <div class="chat-header-actions">
-        <button class="btn-icon" id="new-chat-btn" title="New conversation">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    <div class="claudian-header">
+      <div class="claudian-header-title">
+        <div class="claudian-logo">
+          <!-- Claude 官方 sparkle 图标 SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C12.3 8 16 11.7 22 12C16 12.3 12.3 16 12 22C11.7 16 8 12.3 2 12C8 11.7 11.7 8 12 2Z" fill="#E95D3C"/>
+          </svg>
+        </div>
+        <h4>Clautero</h4>
+      </div>
+      <div class="claudian-header-controls">
+        <button class="claudian-clear-btn" id="new-chat-btn" title="新建对话">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
         </button>
-        <button class="btn-icon" id="history-btn" title="History">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <button class="claudian-clear-btn" id="history-btn" title="历史记录">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
         </button>
       </div>
     </div>
 
     <!-- History Panel (toggleable) -->
-    <div class="history-panel" id="history-panel"></div>
+    <div class="claudian-history-panel" id="history-panel"></div>
 
     <!-- Messages -->
-    <div class="chat-messages" id="message-list">
-      <div class="welcome" id="welcome-screen">
-        <div class="welcome-title">Clautero</div>
-        <div class="welcome-subtitle">AI research assistant powered by Claude. Select items in Zotero and start a conversation.</div>
-      </div>
+    <div class="claudian-messages" id="message-list">
+      <!-- Welcome screen will be dynamically inserted by JS -->
     </div>
 
-    <!-- Context Preview -->
-    <div class="context-preview collapsed context-hidden" id="context-preview">
-      <div class="context-header" id="context-toggle">
-        <span id="context-badge"></span>
-        <span class="context-toggle-icon">&#9662;</span>
-      </div>
-      <div class="context-items" id="context-body"></div>
-    </div>
-
-    <!-- Input Area -->
-    <div class="chat-input-area">
-      <div class="chat-input-container">
-        <textarea
-          class="chat-textarea"
-          id="chat-input"
-          placeholder="Ask about your research..."
-          rows="1"
-        ></textarea>
-        <div class="chat-input-toolbar">
-          <div class="chat-input-info">
-            <span class="chat-input-model">Claude</span>
-          </div>
-          <div class="chat-input-actions">
-            <button class="btn-cancel" id="cancel-btn" title="Cancel" style="display:none;">&#x2715;</button>
-            <button class="btn-send" id="send-btn" title="Send">&#x2191;</button>
-          </div>
+    <!-- Input Wrapper -->
+    <div class="claudian-input-wrapper" id="input-wrapper">
+      <div class="claudian-resize-handle" id="resize-handle"></div>
+      <div class="claudian-input-area">
+        <div class="claudian-input-container">
+          <textarea
+            class="claudian-input"
+            id="chat-input"
+            placeholder="输入您的消息..."
+            rows="1"
+          ></textarea>
+          <!-- Slash command popup (hidden by default) -->
+          <div class="slash-command-popup" id="slash-popup" style="display:none;"></div>
         </div>
+        <button class="claudian-send-btn" id="send-btn">发送</button>
       </div>
     </div>
   </div>

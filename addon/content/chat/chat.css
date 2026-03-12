@@ -1,66 +1,54 @@
 /* ============================================
    Clautero Chat Panel Styles
    Claudian-inspired design for Zotero 7
-   Brand color: #D97757
+   Brand color: #E95D3C
    ============================================ */
 
+/* ---- CSS Variables: Light Theme ---- */
+
 :root {
-  /* Brand */
-  --cl-brand: #D97757;
-  --cl-brand-hover: #c4664a;
-  --cl-brand-dim: rgba(217, 119, 87, 0.15);
-
-  /* Light theme defaults */
-  --cl-bg: #f9f8f6;
-  --cl-bg-panel: #ffffff;
-  --cl-bg-input: #ffffff;
+  --cl-brand: #E95D3C;
+  --cl-brand-hover: #d04e30;
+  --cl-brand-dim: rgba(233, 93, 60, 0.15);
+  --cl-bg: #ffffff;
+  --cl-bg-panel: #f5f5f5;
+  --cl-bg-alt: #f0f0f0;
   --cl-bg-hover: rgba(0, 0, 0, 0.04);
-  --cl-bg-user-msg: rgba(0, 0, 0, 0.3);
-  --cl-bg-tool: transparent;
+  --cl-bg-input: #ffffff;
   --cl-bg-error: #fef0f0;
-
   --cl-text: #2b2b2b;
-  --cl-text-secondary: #7a7a7a;
-  --cl-text-muted: #a0a0a0;
-  --cl-text-user-msg: #ffffff;
-
-  --cl-border: #e5e3df;
-  --cl-border-input: #d8d6d2;
-  --cl-border-tool: #d8d6d2;
-
+  --cl-text-muted: #999999;
+  --cl-border: #e0e0e0;
   --cl-error: #c0392b;
-
   --cl-scrollbar: #c8c8c8;
   --cl-scrollbar-hover: #a8a8a8;
-
-  --cl-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --cl-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --cl-code-bg: rgba(0, 0, 0, 0.05);
+  --cl-blockquote-border: var(--cl-brand);
 }
+
+/* ---- CSS Variables: Dark Theme ---- */
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --cl-bg: #1a1a1a;
-    --cl-bg-panel: #222222;
-    --cl-bg-input: #2a2a2a;
+    --cl-brand: #E95D3C;
+    --cl-brand-hover: #f06e50;
+    --cl-brand-dim: rgba(233, 93, 60, 0.2);
+    --cl-bg: #1e1e1e;
+    --cl-bg-panel: #2a2a2a;
+    --cl-bg-alt: #252525;
     --cl-bg-hover: rgba(255, 255, 255, 0.06);
-    --cl-bg-user-msg: rgba(0, 0, 0, 0.3);
-    --cl-bg-tool: transparent;
+    --cl-bg-input: #2a2a2a;
     --cl-bg-error: #3a1c1c;
-
-    --cl-text: #e8e4df;
-    --cl-text-secondary: #9a9590;
-    --cl-text-muted: #6a6560;
-    --cl-text-user-msg: #ffffff;
-
-    --cl-border: #3a3835;
-    --cl-border-input: #4a4845;
-    --cl-border-tool: #4a4845;
-
+    --cl-text: #e0e0e0;
+    --cl-text-muted: #777777;
+    --cl-border: #3a3a3a;
     --cl-error: #e06060;
-
     --cl-scrollbar: #4a4a4a;
     --cl-scrollbar-hover: #636363;
-
-    --cl-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --cl-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --cl-code-bg: rgba(255, 255, 255, 0.08);
+    --cl-blockquote-border: var(--cl-brand);
   }
 }
 
@@ -79,49 +67,81 @@ html, body {
   width: 100%;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--cl-text);
   background: var(--cl-bg);
 }
 
-/* ---- Layout ---- */
+/* ============================================
+   Core Structure
+   ============================================ */
 
-.chat-container {
+.claudian-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
-/* ---- Top Header ---- */
+/* ============================================
+   Header
+   ============================================ */
 
-.chat-header {
+.claudian-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 16px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--cl-border);
   background: var(--cl-bg);
 }
 
-.chat-header-title {
+.claudian-header-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.claudian-header-title {
+  display: flex;
+  align-items: center;
   font-size: 15px;
   font-weight: 700;
   color: var(--cl-brand);
   letter-spacing: 0.3px;
 }
 
-.chat-header-actions {
+.claudian-header-title h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cl-brand);
+}
+
+.claudian-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.claudian-logo svg {
+  display: block;
+}
+
+.claudian-header-controls {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* ---- Icon Buttons ---- */
-
-.btn-icon {
+.claudian-clear-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -130,19 +150,42 @@ html, body {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--cl-text-secondary);
+  color: var(--cl-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.claudian-clear-btn:hover {
+  background: var(--cl-bg-hover);
+  color: var(--cl-text);
+}
+
+/* ============================================
+   Icon Buttons (shared)
+   ============================================ */
+
+.claudian-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cl-text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   font-size: 15px;
   line-height: 1;
 }
 
-.btn-icon:hover {
+.claudian-btn-icon:hover {
   background: var(--cl-bg-hover);
   color: var(--cl-text);
 }
 
-.btn-icon svg {
+.claudian-btn-icon svg {
   width: 16px;
   height: 16px;
   stroke: currentColor;
@@ -152,40 +195,42 @@ html, body {
   stroke-linejoin: round;
 }
 
-/* ---- History Panel ---- */
+/* ============================================
+   History Panel
+   ============================================ */
 
-.history-panel {
+.claudian-history-panel {
   flex-shrink: 0;
-  max-height: 180px;
+  max-height: 200px;
   overflow-y: auto;
   border-bottom: 1px solid var(--cl-border);
   background: var(--cl-bg-panel);
 }
 
-.history-panel:empty {
+.claudian-history-panel:empty {
   display: none;
 }
 
-.history-item {
+.claudian-history-item {
   display: flex;
   flex-direction: column;
-  padding: 8px 14px;
+  padding: 8px 16px;
   cursor: pointer;
   border-bottom: 1px solid var(--cl-border);
   transition: background 0.15s;
   gap: 2px;
 }
 
-.history-item:hover {
+.claudian-history-item:hover {
   background: var(--cl-bg-hover);
 }
 
-.history-item:last-child {
+.claudian-history-item:last-child {
   border-bottom: none;
 }
 
-.history-title {
-  font-size: 12px;
+.claudian-history-title {
+  font-size: 13px;
   font-weight: 500;
   color: var(--cl-text);
   overflow: hidden;
@@ -193,223 +238,515 @@ html, body {
   white-space: nowrap;
 }
 
-.history-meta {
-  font-size: 10px;
+.claudian-history-meta {
+  font-size: 11px;
   color: var(--cl-text-muted);
 }
 
-.history-empty {
-  font-size: 12px;
+.claudian-history-empty {
+  font-size: 13px;
   color: var(--cl-text-muted);
   text-align: center;
-  padding: 10px 14px;
+  padding: 12px 16px;
 }
 
-/* ---- Messages Area ---- */
+/* ============================================
+   Messages Area
+   ============================================ */
 
-.chat-messages {
+.claudian-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  min-height: 0;
 }
 
-/* ---- Welcome Screen ---- */
+/* ============================================
+   Welcome Screen
+   ============================================ */
 
-.welcome {
+.claudian-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 32px 20px;
+  padding: 40px 24px;
   text-align: center;
-  color: var(--cl-text-secondary);
-  gap: 8px;
+  gap: 12px;
 }
 
-.welcome-title {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 28px;
-  font-weight: 400;
+.claudian-welcome-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.claudian-welcome-title {
+  font-size: 24px;
+  font-weight: 700;
   color: var(--cl-brand);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  margin: 0;
 }
 
-.welcome-subtitle {
-  font-size: 13px;
-  max-width: 260px;
-  line-height: 1.55;
-  color: var(--cl-text-secondary);
+.claudian-welcome-subtitle,
+.claudian-welcome-greeting {
+  font-size: 14px;
+  max-width: 300px;
+  line-height: 1.6;
+  color: var(--cl-text-muted);
 }
 
-/* ---- Message Blocks ---- */
+.claudian-welcome-spacer {
+  height: 8px;
+}
 
-.message {
+.claudian-welcome-examples {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
-  animation: cl-fadeIn 0.2s ease-out;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
 }
 
-.message-user {
+.claudian-welcome-examples-header {
+  font-size: 13px;
+  color: var(--cl-text-muted);
+  margin-bottom: 4px;
+}
+
+.claudian-welcome-examples-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.claudian-welcome-examples-list li {
+  padding: 10px 14px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-bg-panel);
+  color: var(--cl-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.claudian-welcome-examples-list li:hover {
+  background: var(--cl-bg-hover);
+  border-color: var(--cl-brand);
+}
+
+.claudian-welcome-example {
+  padding: 10px 14px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-bg-panel);
+  color: var(--cl-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.claudian-welcome-example:hover {
+  background: var(--cl-bg-hover);
+  border-color: var(--cl-brand);
+}
+
+/* ============================================
+   Message Blocks
+   ============================================ */
+
+.claudian-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 90%;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.claudian-message-user {
   align-self: flex-end;
   max-width: 85%;
 }
 
-.message-assistant {
+.claudian-message-assistant {
   align-self: flex-start;
   width: 100%;
+  max-width: 100%;
 }
 
-/* ---- Message Content ---- */
+/* ============================================
+   Message Content
+   ============================================ */
 
-.message-content {
+.claudian-message-content {
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
 /* User message bubble */
-.message-user .message-content {
-  background: var(--cl-bg-user-msg);
-  color: var(--cl-text-user-msg);
-  padding: 8px 12px;
-  border-radius: 8px;
+.claudian-message-user .claudian-message-content {
+  background: var(--cl-brand);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 12px;
   border-bottom-right-radius: 4px;
 }
 
-/* Assistant message: transparent, full-width, no bubble */
-.message-assistant .message-content {
-  background: transparent;
+/* Assistant message: panel background */
+.claudian-message-assistant .claudian-message-content {
+  background: var(--cl-bg-panel);
   color: var(--cl-text);
-  padding: 2px 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
 }
 
-/* ---- Thinking Indicator ---- */
+/* ============================================
+   Markdown Rendering Styles (inside messages)
+   ============================================ */
 
-.thinking-indicator {
+.claudian-message-content p {
+  margin: 0 0 8px 0;
+}
+
+.claudian-message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.claudian-message-content code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9em;
+  background: var(--cl-code-bg);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.claudian-message-content pre {
+  margin: 8px 0;
+  padding: 12px;
+  background: var(--cl-code-bg);
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.claudian-message-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.claudian-message-content ul,
+.claudian-message-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.claudian-message-content li {
+  margin-bottom: 4px;
+}
+
+.claudian-message-content blockquote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--cl-blockquote-border);
+  color: var(--cl-text-muted);
+  background: var(--cl-bg-hover);
+  border-radius: 0 4px 4px 0;
+}
+
+.claudian-message-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.claudian-message-content th,
+.claudian-message-content td {
+  padding: 6px 10px;
+  border: 1px solid var(--cl-border);
+  text-align: left;
+}
+
+.claudian-message-content th {
+  background: var(--cl-bg-alt);
+  font-weight: 600;
+}
+
+.claudian-message-content a {
+  color: var(--cl-brand);
+  text-decoration: none;
+}
+
+.claudian-message-content a:hover {
+  text-decoration: underline;
+}
+
+.claudian-message-content h1,
+.claudian-message-content h2,
+.claudian-message-content h3,
+.claudian-message-content h4,
+.claudian-message-content h5,
+.claudian-message-content h6 {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.claudian-message-content h1 { font-size: 1.4em; }
+.claudian-message-content h2 { font-size: 1.25em; }
+.claudian-message-content h3 { font-size: 1.1em; }
+
+.claudian-message-content hr {
+  border: none;
+  border-top: 1px solid var(--cl-border);
+  margin: 12px 0;
+}
+
+.claudian-message-content img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* ============================================
+   Streaming Cursor
+   ============================================ */
+
+.claudian-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--cl-brand);
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+}
+
+/* ============================================
+   Thinking Indicator
+   ============================================ */
+
+.claudian-thinking {
   color: var(--cl-brand);
   font-style: italic;
   font-size: 13px;
   padding: 4px 0;
-  animation: cl-pulse 1.5s ease-in-out infinite;
+  animation: processingSpinner 1.5s ease-in-out infinite;
 }
 
-/* ---- Typing Indicator (loading dots) ---- */
+/* ============================================
+   Typing Indicator (loading dots)
+   ============================================ */
 
-.typing-indicator {
+.claudian-typing-indicator {
   display: inline-flex;
   gap: 4px;
   padding: 6px 0;
   align-items: center;
 }
 
-.typing-indicator span {
+.claudian-typing-indicator span {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--cl-brand);
-  animation: cl-bounce 1.2s ease-in-out infinite;
+  animation: bounce 1.2s ease-in-out infinite;
 }
 
-.typing-indicator span:nth-child(2) {
+.claudian-typing-indicator span:nth-child(2) {
   animation-delay: 0.15s;
 }
 
-.typing-indicator span:nth-child(3) {
+.claudian-typing-indicator span:nth-child(3) {
   animation-delay: 0.3s;
 }
 
-/* ---- Tool Status ---- */
+/* ============================================
+   Tool Status
+   ============================================ */
 
-.tool-status {
+.claudian-tool-status {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   margin: 4px 0;
-  border-left: 2px solid var(--cl-border-tool);
+  border-left: 3px solid var(--cl-border);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--cl-text-secondary);
+  font-size: 12px;
+  color: var(--cl-text-muted);
   line-height: 1.5;
+  border-radius: 0 6px 6px 0;
+  background: var(--cl-bg-hover);
 }
 
-.tool-status .tool-icon {
+.claudian-tool-status .claudian-tool-icon {
   flex-shrink: 0;
   font-style: normal;
   font-size: 12px;
 }
 
-.tool-status .tool-name {
-  font-weight: 500;
+.claudian-tool-status .claudian-tool-name {
+  font-weight: 600;
 }
 
 /* Running state: brand color pulsing icon */
-.tool-status.tool-running .tool-icon {
+.claudian-tool-status.claudian-tool-running {
+  border-left-color: var(--cl-brand);
+}
+
+.claudian-tool-status.claudian-tool-running .claudian-tool-icon {
   color: var(--cl-brand);
-  animation: cl-pulse 1.5s ease-in-out infinite;
+  animation: processingSpinner 1.5s ease-in-out infinite;
 }
 
 /* Completed state: green check */
-.tool-status.tool-completed .tool-icon {
+.claudian-tool-status.claudian-tool-completed {
+  border-left-color: #4caf50;
+}
+
+.claudian-tool-status.claudian-tool-completed .claudian-tool-icon {
   color: #4caf50;
 }
 
 /* Error state: red cross */
-.tool-status.tool-error .tool-icon {
-  color: var(--cl-error);
-}
-
-.tool-status.tool-error {
+.claudian-tool-status.claudian-tool-error {
   border-left-color: var(--cl-error);
 }
 
-/* ---- Error Messages ---- */
-
-.message-error {
-  align-self: center;
-  max-width: 90%;
-  padding: 8px 12px;
-  background: var(--cl-bg-error);
-  color: var(--cl-error);
-  border-radius: 6px;
-  font-size: 12px;
-  border-left: 3px solid var(--cl-error);
-  line-height: 1.5;
-}
-
-.message-error .countdown {
-  font-weight: 600;
+.claudian-tool-status.claudian-tool-error .claudian-tool-icon {
   color: var(--cl-error);
 }
 
-.retry-btn {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 10px;
-  border: 1px solid var(--cl-error);
+/* ============================================
+   Message Actions (copy button etc.)
+   ============================================ */
+
+.claudian-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.claudian-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--cl-error);
-  font-size: 11px;
+  color: var(--cl-text-muted);
+  font-size: 12px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
-.retry-btn:hover {
+.claudian-action-btn:hover {
+  background: var(--cl-bg-hover);
+  color: var(--cl-text);
+}
+
+.claudian-action-btn svg {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Error Messages
+   ============================================ */
+
+.claudian-error {
+  align-self: center;
+  max-width: 90%;
+  padding: 10px 14px;
+  background: var(--cl-bg-error);
+  color: var(--cl-error);
+  border-radius: 8px;
+  font-size: 13px;
+  border-left: 3px solid var(--cl-error);
+  line-height: 1.5;
+}
+
+.claudian-error .countdown {
+  font-weight: 600;
+  color: var(--cl-error);
+}
+
+.claudian-error .claudian-action-btn {
+  color: var(--cl-error);
+  border: 1px solid var(--cl-error);
+  margin-left: 8px;
+}
+
+.claudian-error .claudian-action-btn:hover {
   background: var(--cl-error);
   color: #fff;
 }
 
-/* ---- Context Preview ---- */
+.claudian-message-error {
+  align-self: center;
+  max-width: 90%;
+  padding: 10px 14px;
+  background: var(--cl-bg-error);
+  color: var(--cl-error);
+  border-radius: 8px;
+  font-size: 13px;
+  border-left: 3px solid var(--cl-error);
+  line-height: 1.5;
+}
 
-.context-preview {
+.claudian-message-error .claudian-countdown {
+  font-weight: 600;
+  color: var(--cl-error);
+}
+
+.claudian-retry-btn {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 12px;
+  border: 1px solid var(--cl-error);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cl-error);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.claudian-retry-btn:hover {
+  background: var(--cl-error);
+  color: #fff;
+}
+
+/* ============================================
+   Context Preview
+   ============================================ */
+
+.claudian-context-preview {
   flex-shrink: 0;
   border-top: 1px solid var(--cl-border);
   background: var(--cl-bg-panel);
@@ -417,46 +754,46 @@ html, body {
   overflow: hidden;
 }
 
-.context-preview.collapsed {
+.claudian-context-preview.collapsed {
   max-height: 32px;
 }
 
-.context-preview.expanded {
+.claudian-context-preview.expanded {
   max-height: 200px;
 }
 
-.context-header {
+.claudian-context-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
+  padding: 6px 16px;
   cursor: pointer;
   user-select: none;
   font-size: 12px;
-  color: var(--cl-text-secondary);
+  color: var(--cl-text-muted);
   font-weight: 500;
 }
 
-.context-header:hover {
+.claudian-context-header:hover {
   color: var(--cl-text);
 }
 
-.context-toggle-icon {
+.claudian-context-toggle-icon {
   font-size: 10px;
   transition: transform 0.2s;
 }
 
-.context-preview.expanded .context-toggle-icon {
+.claudian-context-preview.expanded .claudian-context-toggle-icon {
   transform: rotate(180deg);
 }
 
-.context-items {
-  padding: 0 14px 8px;
+.claudian-context-items {
+  padding: 0 16px 8px;
   overflow-y: auto;
   max-height: 160px;
 }
 
-.context-item {
+.claudian-context-item {
   display: flex;
   align-items: flex-start;
   gap: 6px;
@@ -468,45 +805,72 @@ html, body {
   color: var(--cl-text);
 }
 
-.context-item strong {
+.claudian-context-item strong {
   flex-shrink: 0;
   font-weight: 500;
 }
 
-.context-item p {
+.claudian-context-item p {
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--cl-text-secondary);
+  color: var(--cl-text-muted);
 }
 
-.context-hidden {
+.claudian-context-hidden {
   display: none;
 }
 
-/* ---- Input Area ---- */
+/* ============================================
+   Input Area
+   ============================================ */
 
-.chat-input-area {
+.claudian-input-wrapper {
   flex-shrink: 0;
-  padding: 8px 12px 10px;
   border-top: 1px solid var(--cl-border);
   background: var(--cl-bg);
+  position: relative;
 }
 
-.chat-input-container {
-  border: 1px solid var(--cl-border-input);
-  border-radius: 6px;
+.claudian-resize-handle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+
+.claudian-resize-handle:hover {
+  background: var(--cl-brand-dim);
+}
+
+.claudian-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 12px 10px;
+}
+
+.claudian-input-container {
+  position: relative;
+  flex: 1;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
   background: var(--cl-bg-input);
-  overflow: hidden;
-  transition: border-color 0.15s;
+  overflow: visible;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.chat-input-container:focus-within {
+.claudian-input-container:focus-within {
   border-color: var(--cl-brand);
+  box-shadow: 0 0 0 2px var(--cl-brand-dim);
 }
 
-.chat-textarea {
+.claudian-input {
   display: block;
   width: 100%;
   border: none;
@@ -515,29 +879,29 @@ html, body {
   background: transparent;
   color: var(--cl-text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
-  min-height: 38px;
-  max-height: 120px;
-  padding: 8px 10px;
+  min-height: 40px;
+  max-height: 140px;
+  padding: 10px 12px;
 }
 
-.chat-textarea::placeholder {
+.claudian-input::placeholder {
   color: var(--cl-text-muted);
 }
 
 /* Bottom toolbar row inside the input container */
-.chat-input-toolbar {
+.claudian-input-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 8px;
   border-top: 1px solid var(--cl-border);
   background: var(--cl-bg);
-  min-height: 30px;
+  min-height: 32px;
 }
 
-.chat-input-info {
+.claudian-input-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -545,92 +909,375 @@ html, body {
   color: var(--cl-text-muted);
 }
 
-.chat-input-model {
+.claudian-input-model {
   color: var(--cl-brand);
   font-weight: 500;
 }
 
-.chat-input-actions {
+.claudian-input-actions {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* Send/Cancel buttons */
-.btn-send,
-.btn-cancel {
+/* ============================================
+   Send / Stop Buttons
+   ============================================ */
+
+.claudian-send-btn,
+.claudian-cancel-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
   flex-shrink: 0;
   font-size: 14px;
 }
 
-.btn-send {
+.claudian-send-btn {
   background: var(--cl-brand);
   color: #fff;
+  padding: 4px 14px;
+  width: auto;
+  height: auto;
+  min-height: 28px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
 }
 
-.btn-send:hover {
+.claudian-send-btn:hover {
   background: var(--cl-brand-hover);
 }
 
-.btn-send:disabled {
+.claudian-send-btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
-.btn-cancel {
+.claudian-send-btn.is-stop {
+  background: var(--cl-error);
+}
+
+.claudian-send-btn.is-stop:hover {
+  background: #a03020;
+}
+
+.claudian-cancel-btn {
   background: var(--cl-bg-hover);
-  color: var(--cl-text-secondary);
+  color: var(--cl-text-muted);
   display: none;
 }
 
-.btn-cancel.visible {
+.claudian-cancel-btn.visible {
   display: inline-flex;
 }
 
-.btn-cancel:hover {
+.claudian-cancel-btn:hover {
   background: var(--cl-bg-error);
   color: var(--cl-error);
 }
 
-/* ---- Scrollbar ---- */
+/* ============================================
+   Slash Command Popup
+   ============================================ */
 
-.chat-messages::-webkit-scrollbar,
-.context-items::-webkit-scrollbar,
-.history-panel::-webkit-scrollbar {
-  width: 4px;
+.slash-command-popup,
+.claudian-slash-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--cl-bg);
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  margin-bottom: 4px;
 }
 
-.chat-messages::-webkit-scrollbar-track,
-.context-items::-webkit-scrollbar-track,
-.history-panel::-webkit-scrollbar-track {
+.slash-command-item,
+.claudian-slash-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.1s;
+}
+
+.slash-command-item:hover,
+.slash-command-item.active,
+.claudian-slash-item:hover,
+.claudian-slash-item.claudian-slash-item-active {
+  background: var(--cl-bg-hover);
+}
+
+.slash-command-item:first-child,
+.claudian-slash-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.slash-command-item:last-child,
+.claudian-slash-item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.slash-command-name,
+.claudian-slash-item-name {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--cl-text);
+}
+
+.slash-command-desc,
+.claudian-slash-item-desc {
+  font-size: 11px;
+  color: var(--cl-text-muted);
+}
+
+/* ============================================
+   Settings Panel
+   ============================================ */
+
+.claudian-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.claudian-settings-panel {
+  background: var(--cl-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 400px;
+  max-height: 80%;
+  overflow-y: auto;
+}
+
+.claudian-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cl-border);
+}
+
+.claudian-settings-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--cl-text);
+}
+
+.claudian-settings-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cl-text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.claudian-settings-close:hover {
+  background: var(--cl-bg-hover);
+  color: var(--cl-text);
+}
+
+.claudian-settings-body {
+  padding: 16px 20px;
+}
+
+.claudian-settings-group {
+  margin-bottom: 16px;
+}
+
+.claudian-settings-group:last-child {
+  margin-bottom: 0;
+}
+
+.claudian-settings-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cl-text);
+  margin-bottom: 6px;
+}
+
+.claudian-settings-description {
+  font-size: 12px;
+  color: var(--cl-text-muted);
+  margin-bottom: 6px;
+}
+
+.claudian-settings-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--cl-border);
+  border-radius: 6px;
+  background: var(--cl-bg-input);
+  color: var(--cl-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.claudian-settings-input:focus {
+  border-color: var(--cl-brand);
+}
+
+.claudian-settings-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--cl-border);
+  border-radius: 6px;
+  background: var(--cl-bg-input);
+  color: var(--cl-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.claudian-settings-select:focus {
+  border-color: var(--cl-brand);
+}
+
+.claudian-settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.claudian-settings-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--cl-border);
+  border-radius: 10px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.claudian-settings-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.claudian-settings-switch.active {
+  background: var(--cl-brand);
+}
+
+.claudian-settings-switch.active::after {
+  transform: translateX(16px);
+}
+
+.claudian-settings-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--cl-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.claudian-settings-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--cl-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cl-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.claudian-settings-btn:hover {
+  background: var(--cl-bg-hover);
+}
+
+.claudian-settings-btn-primary {
+  background: var(--cl-brand);
+  color: white;
+  border-color: var(--cl-brand);
+}
+
+.claudian-settings-btn-primary:hover {
+  background: var(--cl-brand-hover);
+}
+
+/* ============================================
+   Scrollbars
+   ============================================ */
+
+.claudian-messages::-webkit-scrollbar,
+.claudian-context-items::-webkit-scrollbar,
+.claudian-history-panel::-webkit-scrollbar,
+.slash-command-popup::-webkit-scrollbar,
+.claudian-settings-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.claudian-messages::-webkit-scrollbar-track,
+.claudian-context-items::-webkit-scrollbar-track,
+.claudian-history-panel::-webkit-scrollbar-track,
+.slash-command-popup::-webkit-scrollbar-track,
+.claudian-settings-panel::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.chat-messages::-webkit-scrollbar-thumb,
-.context-items::-webkit-scrollbar-thumb,
-.history-panel::-webkit-scrollbar-thumb {
+.claudian-messages::-webkit-scrollbar-thumb,
+.claudian-context-items::-webkit-scrollbar-thumb,
+.claudian-history-panel::-webkit-scrollbar-thumb,
+.slash-command-popup::-webkit-scrollbar-thumb,
+.claudian-settings-panel::-webkit-scrollbar-thumb {
   background: var(--cl-scrollbar);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
-.chat-messages::-webkit-scrollbar-thumb:hover,
-.context-items::-webkit-scrollbar-thumb:hover,
-.history-panel::-webkit-scrollbar-thumb:hover {
+.claudian-messages::-webkit-scrollbar-thumb:hover,
+.claudian-context-items::-webkit-scrollbar-thumb:hover,
+.claudian-history-panel::-webkit-scrollbar-thumb:hover,
+.slash-command-popup::-webkit-scrollbar-thumb:hover,
+.claudian-settings-panel::-webkit-scrollbar-thumb:hover {
   background: var(--cl-scrollbar-hover);
 }
 
-/* ---- Animations ---- */
+/* ============================================
+   Animations
+   ============================================ */
 
-@keyframes cl-fadeIn {
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -641,7 +1288,16 @@ html, body {
   }
 }
 
-@keyframes cl-bounce {
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes bounce {
   0%, 60%, 100% {
     transform: translateY(0);
   }
@@ -650,11 +1306,11 @@ html, body {
   }
 }
 
-@keyframes cl-pulse {
+@keyframes processingSpinner {
   0%, 100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
 }
