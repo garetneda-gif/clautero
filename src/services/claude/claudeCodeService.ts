@@ -22,6 +22,8 @@ interface ClaudeCodeEvent {
     content: Array<{
       type: string;
       text?: string;
+      thinking?: string;
+      signature?: string;
       id?: string;
       name?: string;
       input?: Record<string, unknown>;
@@ -143,25 +145,13 @@ export class ClaudeCodeService {
       "stream-json",
       "--input-format",
       "stream-json",
-      "--permission-mode",
-      "dontAsk",
+      "--tools",
+      "",
       "--verbose",
     ];
 
-    if (options?.model) {
-      args.push("--model", options.model);
-    }
-
-    if (options?.maxTurns) {
-      args.push("--max-turns", String(options.maxTurns));
-    }
-
     if (options?.sessionId) {
       args.push("--session-id", options.sessionId);
-    }
-
-    if (options?.systemPrompt) {
-      args.push("--system-prompt", options.systemPrompt);
     }
 
     // 使用 Zotero/Gecko 的 Subprocess API
@@ -334,6 +324,8 @@ export class ClaudeCodeService {
             if (block.type === "text" && block.text) {
               fullText += block.text;
               callbacks.onTextDelta(block.text);
+            } else if (block.type === "thinking") {
+              callbacks.onThinking?.("Thinking...");
             } else if (block.type === "tool_use" && block.name) {
               callbacks.onToolStart?.(block.id || "", block.name);
             }

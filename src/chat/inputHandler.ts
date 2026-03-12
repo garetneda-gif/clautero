@@ -1,17 +1,19 @@
 export class InputHandler {
+  private static readonly SEND_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"></path><path d="M22 2L15 22L11 13L2 9L22 2Z"></path></svg>`;
+
+  private static readonly STOP_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>`;
+
   private textarea: HTMLTextAreaElement;
   private sendBtn: HTMLButtonElement;
   private sendCallback: ((text: string) => void) | null = null;
   private cancelCallback: (() => void) | null = null;
   private isStreaming = false;
 
-  constructor(
-    textarea: HTMLTextAreaElement,
-    sendBtn: HTMLButtonElement,
-  ) {
+  constructor(textarea: HTMLTextAreaElement, sendBtn: HTMLButtonElement) {
     this.textarea = textarea;
     this.sendBtn = sendBtn;
     this.setupListeners();
+    this.setStreamingState(false);
   }
 
   private setupListeners(): void {
@@ -71,11 +73,15 @@ export class InputHandler {
     this.isStreaming = streaming;
 
     if (streaming) {
-      this.sendBtn.textContent = "停止";
+      this.sendBtn.innerHTML = InputHandler.STOP_ICON;
+      this.sendBtn.setAttribute("aria-label", "停止生成");
+      this.sendBtn.title = "停止生成";
       this.sendBtn.classList.add("is-stop");
       this.textarea.disabled = true;
     } else {
-      this.sendBtn.textContent = "发送";
+      this.sendBtn.innerHTML = InputHandler.SEND_ICON;
+      this.sendBtn.setAttribute("aria-label", "发送消息");
+      this.sendBtn.title = "发送消息";
       this.sendBtn.classList.remove("is-stop");
       this.textarea.disabled = false;
       this.textarea.focus();

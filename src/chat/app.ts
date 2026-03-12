@@ -58,10 +58,7 @@ class ChatApp {
     this.renderer = new MessageRenderer(
       document.getElementById("message-list")!,
     );
-    this.inputHandler = new InputHandler(
-      this.textarea,
-      this.sendBtn,
-    );
+    this.inputHandler = new InputHandler(this.textarea, this.sendBtn);
 
     this.setupEventListeners();
     this.setupMessageListener();
@@ -86,9 +83,7 @@ class ChatApp {
 
   private setupSlashCommands(): void {
     this.textarea.addEventListener("input", () => this.onSlashInput());
-    this.textarea.addEventListener("keydown", (e) =>
-      this.onSlashKeydown(e),
-    );
+    this.textarea.addEventListener("keydown", (e) => this.onSlashKeydown(e));
     this.textarea.addEventListener("blur", () => {
       // 延迟关闭，以便点击事件能先触发
       setTimeout(() => this.dismissSlashPopup(), 150);
@@ -248,6 +243,9 @@ class ChatApp {
         case "tool_start":
           this.handleToolStart(data);
           break;
+        case "thinking":
+          this.handleThinking(data);
+          break;
         case "tool_result":
           this.handleToolResult(data);
           break;
@@ -309,10 +307,7 @@ class ChatApp {
     this.setStreamingUI(false);
   }
 
-  private handleStreamDelta(data: {
-    requestId: string;
-    text: string;
-  }): void {
+  private handleStreamDelta(data: { requestId: string; text: string }): void {
     if (data.requestId !== this.currentRequestId) return;
     this.currentAssistantContent += data.text;
     this.renderer.appendAssistantDelta(data.text);
@@ -382,6 +377,11 @@ class ChatApp {
     this.renderer.showToolStatus(data.name, "running");
   }
 
+  private handleThinking(data: { requestId: string; text: string }): void {
+    if (data.requestId !== this.currentRequestId) return;
+    this.renderer.updateAssistantThinking(data.text);
+  }
+
   private handleToolResult(data: {
     requestId: string;
     toolCallId: string;
@@ -444,9 +444,7 @@ class ChatApp {
     try {
       return crypto.randomUUID();
     } catch {
-      return (
-        Date.now().toString(36) + Math.random().toString(36).substring(2)
-      );
+      return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
   }
 }

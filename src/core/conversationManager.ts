@@ -150,7 +150,6 @@ export class ConversationManager {
       }, {
         model,
         systemPrompt: this.systemPrompt,
-        maxTurns: 5,
       }).catch(reject);
     });
   }
