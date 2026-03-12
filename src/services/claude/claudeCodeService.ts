@@ -114,6 +114,7 @@ export class ClaudeCodeService {
     },
   ): Promise<void> {
     const args = [
+      "-p",
       "--output-format", "stream-json",
       "--input-format", "stream-json",
       "--verbose",
@@ -178,34 +179,38 @@ export class ClaudeCodeService {
       let buffer = "";
 
       const readLoop = async () => {
-        while (true) {
-          const chunk = await proc.stdout.readString();
-          if (!chunk) break;
+        try {
+          while (true) {
+            const chunk = await proc.stdout.readString();
+            if (!chunk) break;
 
-          buffer += chunk;
-          const lines = buffer.split("\n");
-          // 保留最后一个可能不完整的行
-          buffer = lines.pop() || "";
+            buffer += chunk;
+            const lines = buffer.split("\n");
+            // 保留最后一个可能不完整的行
+            buffer = lines.pop() || "";
 
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const event = JSON.parse(line) as ClaudeCodeEvent;
-              fullText = this.handleEvent(event, fullText, callbacks);
-            } catch {
-              Zotero.debug(`[Clautero] Failed to parse Claude Code event: ${line.substring(0, 200)}`);
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const event = JSON.parse(line) as ClaudeCodeEvent;
+                fullText = this.handleEvent(event, fullText, callbacks);
+              } catch {
+                Zotero.debug(`[Clautero] Failed to parse Claude Code event: ${line.substring(0, 200)}`);
+              }
             }
           }
-        }
 
-        // 处理 buffer 中剩余内容
-        if (buffer.trim()) {
-          try {
-            const event = JSON.parse(buffer) as ClaudeCodeEvent;
-            fullText = this.handleEvent(event, fullText, callbacks);
-          } catch {
-            // 忽略
+          // 处理 buffer 中剩余内容
+          if (buffer.trim()) {
+            try {
+              const event = JSON.parse(buffer) as ClaudeCodeEvent;
+              fullText = this.handleEvent(event, fullText, callbacks);
+            } catch {
+              // 忽略
+            }
           }
+        } catch (e) {
+          Zotero.debug(`[Clautero] readLoop error: ${e}`);
         }
       };
 
