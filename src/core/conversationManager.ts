@@ -48,7 +48,7 @@ export class ConversationManager {
     try {
       const model =
         (Zotero.Prefs.get("extensions.clautero.model", true) as string) ||
-        "claude-sonnet-4-5-20250514";
+        "claude-sonnet-4-6";
 
       // 优先使用 Claude Code CLI
       if (this.mode === "claude-code") {

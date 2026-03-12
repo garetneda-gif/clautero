@@ -13,6 +13,9 @@
 /** Claude Code 输出事件类型 */
 interface ClaudeCodeEvent {
   type: string;
+  subtype?: string;
+  is_error?: boolean;
+  error?: string;
   /** assistant 消息 */
   message?: {
     role: string;
@@ -66,10 +69,7 @@ export class ClaudeCodeService {
 
   private findClaudePath(): string {
     // 常见的 claude CLI 安装路径
-    const candidates = [
-      "/usr/local/bin/claude",
-      "/opt/homebrew/bin/claude",
-    ];
+    const candidates = ["/usr/local/bin/claude", "/opt/homebrew/bin/claude"];
 
     // 优先使用 HOME 目录下的安装
     try {
@@ -113,10 +113,38 @@ export class ClaudeCodeService {
       systemPrompt?: string;
     },
   ): Promise<void> {
+    let settled = false;
+    let sawEvent = false;
+    let hasErrored = false;
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearStallTimer = () => {
+      if (stallTimer) {
+        clearTimeout(stallTimer);
+        stallTimer = null;
+      }
+    };
+
+    const emitError = (message: string) => {
+      if (settled || hasErrored) return;
+      hasErrored = true;
+      clearStallTimer();
+      callbacks.onError(message);
+    };
+
+    const safeCallbacks: ClaudeCodeCallbacks = {
+      ...callbacks,
+      onError: emitError,
+    };
+
     const args = [
       "-p",
-      "--output-format", "stream-json",
-      "--input-format", "stream-json",
+      "--output-format",
+      "stream-json",
+      "--input-format",
+      "stream-json",
+      "--permission-mode",
+      "dontAsk",
       "--verbose",
     ];
 
@@ -145,6 +173,8 @@ export class ClaudeCodeService {
       const proc = await Subprocess.call({
         command: this.claudePath,
         arguments: args,
+        stdin: "pipe",
+        stdout: "pipe",
         environmentAppend: true,
         environment: this.getEnvironment(),
         stderr: "pipe",
@@ -161,22 +191,41 @@ export class ClaudeCodeService {
       };
 
       // 写入用户消息到 stdin
-      const inputMessage = JSON.stringify({
-        type: "user",
-        session_id: options?.sessionId || "",
-        message: {
-          role: "user",
-          content: [{ type: "text", text }],
-        },
-        parent_tool_use_id: null,
-      }) + "\n";
+      const inputMessage =
+        JSON.stringify({
+          type: "user",
+          session_id: options?.sessionId || "",
+          message: {
+            role: "user",
+            content: [{ type: "text", text }],
+          },
+          parent_tool_use_id: null,
+        }) + "\n";
 
       await proc.stdin.write(inputMessage);
       await proc.stdin.close();
 
-      // 读取 stdout 流式输出
       let fullText = "";
       let buffer = "";
+
+      const startStallTimer = () => {
+        clearStallTimer();
+        stallTimer = setTimeout(() => {
+          if (settled) return;
+          try {
+            proc.kill();
+          } catch {
+            // 进程可能已退出
+          }
+          emitError(
+            sawEvent
+              ? "Claude Code 长时间未继续输出，已自动终止。请重试。"
+              : "Claude Code 未返回任何事件，已自动终止。请检查 CLI 配置后重试。",
+          );
+        }, 45000);
+      };
+
+      startStallTimer();
 
       const readLoop = async () => {
         try {
@@ -184,6 +233,7 @@ export class ClaudeCodeService {
             const chunk = await proc.stdout.readString();
             if (!chunk) break;
 
+            startStallTimer();
             buffer += chunk;
             const lines = buffer.split("\n");
             // 保留最后一个可能不完整的行
@@ -193,9 +243,12 @@ export class ClaudeCodeService {
               if (!line.trim()) continue;
               try {
                 const event = JSON.parse(line) as ClaudeCodeEvent;
-                fullText = this.handleEvent(event, fullText, callbacks);
+                sawEvent = true;
+                fullText = this.handleEvent(event, fullText, safeCallbacks);
               } catch {
-                Zotero.debug(`[Clautero] Failed to parse Claude Code event: ${line.substring(0, 200)}`);
+                Zotero.debug(
+                  `[Clautero] Failed to parse Claude Code event: ${line.substring(0, 200)}`,
+                );
               }
             }
           }
@@ -204,7 +257,8 @@ export class ClaudeCodeService {
           if (buffer.trim()) {
             try {
               const event = JSON.parse(buffer) as ClaudeCodeEvent;
-              fullText = this.handleEvent(event, fullText, callbacks);
+              sawEvent = true;
+              fullText = this.handleEvent(event, fullText, safeCallbacks);
             } catch {
               // 忽略
             }
@@ -219,25 +273,33 @@ export class ClaudeCodeService {
         while (true) {
           const chunk = await proc.stderr.readString();
           if (!chunk) break;
-          Zotero.debug(`[Clautero] Claude Code stderr: ${chunk.substring(0, 500)}`);
+          Zotero.debug(
+            `[Clautero] Claude Code stderr: ${chunk.substring(0, 500)}`,
+          );
         }
       };
 
       await Promise.all([readLoop(), readStderr()]);
 
       const exitCode = await proc.wait();
+      settled = true;
+      clearStallTimer();
       this.currentProcess = null;
 
       if (exitCode !== 0) {
         Zotero.debug(`[Clautero] Claude Code exited with code ${exitCode}`);
       }
 
-      callbacks.onComplete(fullText);
+      if (!hasErrored) {
+        callbacks.onComplete(fullText);
+      }
     } catch (error) {
+      settled = true;
+      clearStallTimer();
       this.currentProcess = null;
       const msg = error instanceof Error ? error.message : String(error);
       Zotero.debug(`[Clautero] Claude Code error: ${msg}`);
-      callbacks.onError(msg);
+      emitError(msg);
     }
   }
 
@@ -249,8 +311,23 @@ export class ClaudeCodeService {
     fullText: string,
     callbacks: ClaudeCodeCallbacks,
   ): string {
+    if (event.type === "result" && event.is_error) {
+      const errorText = event.result || event.error || "Claude Code 请求失败";
+      callbacks.onError(errorText);
+      return fullText;
+    }
+
     switch (event.type) {
       case "assistant": {
+        if (event.error) {
+          const assistantErrorText =
+            event.message?.content
+              .filter((block) => block.type === "text" && block.text)
+              .map((block) => block.text)
+              .join("\n") || event.error;
+          callbacks.onError(assistantErrorText);
+          break;
+        }
         // 助手消息（包含文本和/或工具调用）
         if (event.message?.content) {
           for (const block of event.message.content) {
@@ -317,6 +394,7 @@ export class ClaudeCodeService {
       const proc = await Subprocess.call({
         command: this.claudePath,
         arguments: ["--version"],
+        stdout: "pipe",
         environmentAppend: true,
         environment: this.getEnvironment(),
         stderr: "pipe",

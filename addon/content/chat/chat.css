@@ -7,7 +7,7 @@
 /* ---- CSS Variables: Light Theme ---- */
 
 :root {
-  --cl-brand: #E95D3C;
+  --cl-brand: #e95d3c;
   --cl-brand-hover: #d04e30;
   --cl-brand-dim: rgba(233, 93, 60, 0.15);
   --cl-bg: #ffffff;
@@ -16,7 +16,10 @@
   --cl-bg-hover: rgba(0, 0, 0, 0.04);
   --cl-bg-input: #ffffff;
   --cl-bg-error: #fef0f0;
+  --cl-bg-user-msg: #2f3338;
+  --cl-bg-assistant-msg: transparent;
   --cl-text: #2b2b2b;
+  --cl-text-user: #ffffff;
   --cl-text-muted: #999999;
   --cl-border: #e0e0e0;
   --cl-error: #c0392b;
@@ -31,7 +34,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --cl-brand: #E95D3C;
+    --cl-brand: #e95d3c;
     --cl-brand-hover: #f06e50;
     --cl-brand-dim: rgba(233, 93, 60, 0.2);
     --cl-bg: #1e1e1e;
@@ -40,7 +43,10 @@
     --cl-bg-hover: rgba(255, 255, 255, 0.06);
     --cl-bg-input: #2a2a2a;
     --cl-bg-error: #3a1c1c;
+    --cl-bg-user-msg: #353a42;
+    --cl-bg-assistant-msg: transparent;
     --cl-text: #e0e0e0;
+    --cl-text-user: #f8f9fb;
     --cl-text-muted: #777777;
     --cl-border: #3a3a3a;
     --cl-error: #e06060;
@@ -62,11 +68,14 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: var(--cl-text);
@@ -152,7 +161,9 @@ html, body {
   background: transparent;
   color: var(--cl-text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .claudian-clear-btn:hover {
@@ -175,7 +186,9 @@ html, body {
   background: transparent;
   color: var(--cl-text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   font-size: 15px;
   line-height: 1;
 }
@@ -340,7 +353,9 @@ html, body {
   color: var(--cl-text);
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   text-align: left;
 }
 
@@ -357,7 +372,9 @@ html, body {
   color: var(--cl-text);
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   text-align: left;
 }
 
@@ -395,27 +412,27 @@ html, body {
 .claudian-message-content {
   word-wrap: break-word;
   overflow-wrap: break-word;
-  white-space: pre-wrap;
   font-size: 14px;
   line-height: 1.6;
 }
 
 /* User message bubble */
 .claudian-message-user .claudian-message-content {
-  background: var(--cl-brand);
-  color: #ffffff;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border-bottom-right-radius: 4px;
+  white-space: pre-wrap;
+  background: var(--cl-bg-user-msg);
+  color: var(--cl-text-user);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-bottom-right-radius: 6px;
 }
 
 /* Assistant message: panel background */
 .claudian-message-assistant .claudian-message-content {
-  background: var(--cl-bg-panel);
+  white-space: normal;
+  background: var(--cl-bg-assistant-msg);
   color: var(--cl-text);
-  padding: 12px 16px;
-  border-radius: 12px;
-  border-bottom-left-radius: 4px;
+  padding: 0;
+  border-radius: 0;
 }
 
 /* ============================================
@@ -431,7 +448,9 @@ html, body {
 }
 
 .claudian-message-content code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
   font-size: 0.9em;
   background: var(--cl-code-bg);
   padding: 2px 5px;
@@ -466,12 +485,12 @@ html, body {
 }
 
 .claudian-message-content blockquote {
-  margin: 8px 0;
-  padding: 8px 12px;
+  margin: 10px 0;
+  padding: 2px 0 2px 12px;
   border-left: 3px solid var(--cl-blockquote-border);
   color: var(--cl-text-muted);
-  background: var(--cl-bg-hover);
-  border-radius: 0 4px 4px 0;
+  background: transparent;
+  border-radius: 0;
 }
 
 .claudian-message-content table {
@@ -513,9 +532,15 @@ html, body {
   line-height: 1.3;
 }
 
-.claudian-message-content h1 { font-size: 1.4em; }
-.claudian-message-content h2 { font-size: 1.25em; }
-.claudian-message-content h3 { font-size: 1.1em; }
+.claudian-message-content h1 {
+  font-size: 1.4em;
+}
+.claudian-message-content h2 {
+  font-size: 1.25em;
+}
+.claudian-message-content h3 {
+  font-size: 1.1em;
+}
 
 .claudian-message-content hr {
   border: none;
@@ -594,7 +619,8 @@ html, body {
   padding: 6px 12px;
   margin: 4px 0;
   border-left: 3px solid var(--cl-border);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
   color: var(--cl-text-muted);
   line-height: 1.5;
@@ -663,7 +689,9 @@ html, body {
   color: var(--cl-text-muted);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .claudian-action-btn:hover {
@@ -734,7 +762,9 @@ html, body {
   color: var(--cl-error);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .claudian-retry-btn:hover {
@@ -862,7 +892,9 @@ html, body {
   border-radius: 8px;
   background: var(--cl-bg-input);
   overflow: visible;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .claudian-input-container:focus-within {
@@ -934,7 +966,9 @@ html, body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
   flex-shrink: 0;
   font-size: 14px;
 }
@@ -1289,7 +1323,8 @@ html, body {
 }
 
 @keyframes blink {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -1298,7 +1333,9 @@ html, body {
 }
 
 @keyframes bounce {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
   }
   30% {
@@ -1307,7 +1344,8 @@ html, body {
 }
 
 @keyframes processingSpinner {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

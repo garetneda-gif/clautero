@@ -1,8 +1,11 @@
+import { marked } from "marked";
+
 export class MessageRenderer {
   private container: HTMLElement;
   private currentAssistantEl: HTMLElement | null = null;
   private currentContentEl: HTMLElement | null = null;
   private cursorEl: HTMLElement | null = null;
+  private currentAssistantRawText = "";
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -106,11 +109,13 @@ export class MessageRenderer {
     this.container.appendChild(msgEl);
     this.currentAssistantEl = msgEl;
     this.currentContentEl = contentEl;
+    this.currentAssistantRawText = "";
     this.scrollToBottom();
   }
 
   appendAssistantDelta(text: string): void {
     if (!this.currentContentEl) return;
+    this.currentAssistantRawText += text;
     // 在光标前插入文本
     if (this.cursorEl) {
       const textNode = document.createTextNode(text);
@@ -131,6 +136,11 @@ export class MessageRenderer {
     // 添加消息操作按钮（复制）
     if (this.currentAssistantEl && this.currentContentEl) {
       const contentEl = this.currentContentEl;
+      const rawText =
+        this.currentAssistantRawText || contentEl.textContent || "";
+
+      this.renderAssistantMarkdown(contentEl, rawText);
+
       const actions = document.createElement("div");
       actions.className = "claudian-message-actions";
 
@@ -138,7 +148,8 @@ export class MessageRenderer {
       copyBtn.className = "claudian-action-btn";
       copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg> 复制`;
       copyBtn.addEventListener("click", () => {
-        const copyText = contentEl.textContent || "";
+        const copyText =
+          contentEl.dataset.rawText || contentEl.textContent || "";
         navigator.clipboard.writeText(copyText).catch(() => {});
         copyBtn.textContent = "已复制";
         setTimeout(() => {
@@ -151,6 +162,7 @@ export class MessageRenderer {
 
     this.currentAssistantEl = null;
     this.currentContentEl = null;
+    this.currentAssistantRawText = "";
   }
 
   addRestoredAssistantMessage(text: string): void {
@@ -159,7 +171,7 @@ export class MessageRenderer {
     msgEl.className = "claudian-message claudian-message-assistant";
     const contentEl = document.createElement("div");
     contentEl.className = "claudian-message-content";
-    contentEl.textContent = text;
+    this.renderAssistantMarkdown(contentEl, text);
     msgEl.appendChild(contentEl);
     this.container.appendChild(msgEl);
     this.scrollToBottom();
@@ -281,8 +293,7 @@ export class MessageRenderer {
       nameSpan.className = "claudian-tool-name";
       nameSpan.textContent = this.escapeHtml(name);
       const summarySpan = document.createElement("span");
-      summarySpan.textContent =
-        " \u2014 " + this.escapeHtml(summary || "完成");
+      summarySpan.textContent = " \u2014 " + this.escapeHtml(summary || "完成");
       toolEl.appendChild(icon);
       toolEl.appendChild(nameSpan);
       toolEl.appendChild(summarySpan);
@@ -312,5 +323,53 @@ export class MessageRenderer {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private renderAssistantMarkdown(contentEl: HTMLElement, text: string): void {
+    contentEl.dataset.rawText = text;
+    const html = marked.parse(text, {
+      breaks: true,
+      gfm: true,
+    }) as string;
+    contentEl.innerHTML = this.sanitizeRenderedHtml(html);
+
+    for (const link of contentEl.querySelectorAll("a")) {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
+    }
+  }
+
+  private sanitizeRenderedHtml(html: string): string {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+
+    for (const element of template.content.querySelectorAll(
+      "script,style,iframe,object,embed,link,meta",
+    )) {
+      element.remove();
+    }
+
+    for (const element of template.content.querySelectorAll("*")) {
+      for (const attribute of [...element.attributes]) {
+        const attributeName = attribute.name.toLowerCase();
+        const attributeValue = attribute.value.trim();
+
+        if (attributeName.startsWith("on")) {
+          element.removeAttribute(attribute.name);
+          continue;
+        }
+
+        if (attributeName === "href" || attributeName === "src") {
+          const isAllowed = /^(https?:|mailto:|zotero:|#|\/)/i.test(
+            attributeValue,
+          );
+          if (!isAllowed) {
+            element.removeAttribute(attribute.name);
+          }
+        }
+      }
+    }
+
+    return template.innerHTML;
   }
 }
