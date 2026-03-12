@@ -1,13 +1,13 @@
-import {
-  BasicExampleFactory,
-  HelperExampleFactory,
-  KeyExampleFactory,
-  PromptExampleFactory,
-  UIExampleFactory,
-} from "./modules/examples";
-import { getString, initLocale } from "./utils/locale";
-import { registerPrefsScripts } from "./modules/preferenceScript";
+import { initLocale, getString } from "./utils/locale";
 import { createZToolkit } from "./utils/ztoolkit";
+import { registerPrefsScripts } from "./ui/preferencePane";
+import {
+  registerSidebarPanel,
+  unregisterSidebarPanel,
+} from "./ui/sidebarPanel";
+import { MessageBridge } from "./core/messageBridge";
+
+let messageBridge: MessageBridge | null = null;
 
 async function onStartup() {
   await Promise.all([
@@ -18,39 +18,58 @@ async function onStartup() {
 
   initLocale();
 
-  BasicExampleFactory.registerPrefs();
+  // 注册偏好设置面板
+  Zotero.PreferencePanes.register({
+    pluginID: addon.data.config.addonID,
+    src: rootURI + "content/preferences.xhtml",
+    label: getString("prefs-title"),
+    image: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+  });
 
-  BasicExampleFactory.registerNotifier();
+  // 注册 Notifier 监听条目选择
+  const notifierCallback = {
+    notify: async (
+      event: string,
+      type: string,
+      ids: Array<string | number>,
+      extraData: { [key: string]: any },
+    ) => {
+      onNotify(event, type, ids, extraData);
+    },
+  };
+  Zotero.Notifier.registerObserver(notifierCallback, ["item", "tab"]);
 
-  KeyExampleFactory.registerShortcuts();
-
-  await UIExampleFactory.registerExtraColumn();
-
-  await UIExampleFactory.registerExtraColumnWithCustomCell();
-
-  UIExampleFactory.registerItemPaneCustomInfoRow();
-
-  UIExampleFactory.registerItemPaneSection();
-
-  UIExampleFactory.registerReaderItemPaneSection();
-
+  // 为已打开的窗口执行加载逻辑
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
   );
 
-  // Mark initialized as true to confirm plugin loading status
-  // outside of the plugin (e.g. scaffold testing process)
   addon.data.initialized = true;
 }
 
 async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
-  // Create ztoolkit for every window
+  // 为每个窗口创建新的 ztoolkit
   addon.data.ztoolkit = createZToolkit();
 
+  // 注入 FTL 本地化文件
   win.MozXULElement.insertFTLIfNeeded(
     `${addon.data.config.addonRef}-mainWindow.ftl`,
   );
 
+  // 注册样式表
+  const doc = win.document;
+  const link = doc.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `chrome://${addon.data.config.addonRef}/content/clautero.css`;
+  doc.documentElement?.appendChild(link);
+
+  // 注册侧边栏面板并获取 nonce
+  const nonce = registerSidebarPanel();
+
+  // 初始化 MessageBridge（延迟到 iframe 加载完成后 attach）
+  messageBridge = new MessageBridge(nonce);
+
+  // 显示加载通知
   const popupWin = new ztoolkit.ProgressWindow(addon.data.config.addonName, {
     closeOnClick: true,
     closeTime: -1,
@@ -62,80 +81,58 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
     })
     .show();
 
-  await Zotero.Promise.delay(1000);
-  popupWin.changeLine({
-    progress: 30,
-    text: `[30%] ${getString("startup-begin")}`,
-  });
-
-  UIExampleFactory.registerStyleSheet(win);
-
-  UIExampleFactory.registerRightClickMenuItem();
-
-  UIExampleFactory.registerRightClickMenuPopup(win);
-
-  UIExampleFactory.registerWindowMenuWithSeparator();
-
-  PromptExampleFactory.registerNormalCommandExample();
-
-  PromptExampleFactory.registerAnonymousCommandExample(win);
-
-  PromptExampleFactory.registerConditionalCommandExample();
-
-  await Zotero.Promise.delay(1000);
-
+  await Zotero.Promise.delay(500);
   popupWin.changeLine({
     progress: 100,
-    text: `[100%] ${getString("startup-finish")}`,
+    text: `${getString("startup-finish")}`,
   });
-  popupWin.startCloseTimer(5000);
-
-  addon.hooks.onDialogEvents("dialogExample");
+  popupWin.startCloseTimer(3000);
 }
 
-async function onMainWindowUnload(win: Window): Promise<void> {
+async function onMainWindowUnload(_win: Window): Promise<void> {
+  // 清理 MessageBridge
+  if (messageBridge) {
+    messageBridge.detach();
+    messageBridge = null;
+  }
+
+  // 清理侧边栏面板
+  unregisterSidebarPanel();
+
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
 }
 
 function onShutdown(): void {
+  // 停止所有服务
+  if (messageBridge) {
+    messageBridge.detach();
+    messageBridge = null;
+  }
+
+  unregisterSidebarPanel();
+
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
-  // Remove addon object
+
   addon.data.alive = false;
   // @ts-expect-error - Plugin instance is not typed
   delete Zotero[addon.data.config.addonInstance];
 }
 
-/**
- * This function is just an example of dispatcher for Notify events.
- * Any operations should be placed in a function to keep this funcion clear.
- */
 async function onNotify(
   event: string,
   type: string,
   ids: Array<string | number>,
   extraData: { [key: string]: any },
 ) {
-  // You can add your code to the corresponding notify type
   ztoolkit.log("notify", event, type, ids, extraData);
-  if (
-    event == "select" &&
-    type == "tab" &&
-    extraData[ids[0]].type == "reader"
-  ) {
-    BasicExampleFactory.exampleNotifierCallback();
-  } else {
-    return;
+
+  // 监听条目选择事件，通知 ContextManager
+  if (event === "select" && type === "item") {
+    // 将在 ContextManager 完整实现后补充
+    Zotero.debug("[Clautero] Item selection changed");
   }
 }
 
-/**
- * This function is just an example of dispatcher for Preference UI events.
- * Any operations should be placed in a function to keep this funcion clear.
- * @param type event type
- * @param data event data
- */
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
     case "load":
@@ -146,44 +143,12 @@ async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   }
 }
 
-function onShortcuts(type: string) {
-  switch (type) {
-    case "larger":
-      KeyExampleFactory.exampleShortcutLargerCallback();
-      break;
-    case "smaller":
-      KeyExampleFactory.exampleShortcutSmallerCallback();
-      break;
-    default:
-      break;
-  }
+/**
+ * 获取当前 MessageBridge 实例（供其他模块使用）
+ */
+export function getMessageBridge(): MessageBridge | null {
+  return messageBridge;
 }
-
-function onDialogEvents(type: string) {
-  switch (type) {
-    case "dialogExample":
-      HelperExampleFactory.dialogExample();
-      break;
-    case "clipboardExample":
-      HelperExampleFactory.clipboardExample();
-      break;
-    case "filePickerExample":
-      HelperExampleFactory.filePickerExample();
-      break;
-    case "progressWindowExample":
-      HelperExampleFactory.progressWindowExample();
-      break;
-    case "vtableExample":
-      HelperExampleFactory.vtableExample();
-      break;
-    default:
-      break;
-  }
-}
-
-// Add your hooks here. For element click, etc.
-// Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.
-// Otherwise the code would be hard to read and maintain.
 
 export default {
   onStartup,
@@ -192,6 +157,4 @@ export default {
   onMainWindowUnload,
   onNotify,
   onPrefsEvent,
-  onShortcuts,
-  onDialogEvents,
 };
