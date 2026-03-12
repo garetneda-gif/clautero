@@ -6,45 +6,112 @@
 >
   <label><html:h2 data-l10n-id="pref-title"></html:h2></label>
 
-  <!-- Claude API Section -->
+  <!-- 语言 -->
   <groupbox>
-    <label><html:h3 data-l10n-id="pref-section-api"></html:h3></label>
+    <label><html:h3 data-l10n-id="pref-section-general"></html:h3></label>
 
     <hbox align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-api-key"
-        data-l10n-id="pref-api-key"
-      ></html:label>
+      <html:label data-l10n-id="pref-language"></html:label>
+      <menulist id="zotero-prefpane-__addonRef__-language" preference="language">
+        <menupopup>
+          <menuitem label="简体中文" value="zh-CN" />
+          <menuitem label="English" value="en-US" />
+        </menupopup>
+      </menulist>
+    </hbox>
+  </groupbox>
+
+  <!-- 个性化设置 -->
+  <groupbox>
+    <label><html:h3 data-l10n-id="pref-section-personalization"></html:h3></label>
+
+    <hbox align="center">
+      <html:label data-l10n-id="pref-username"></html:label>
       <html:input
-        type="password"
-        id="zotero-prefpane-__addonRef__-api-key"
-        preference="apiKey"
-        data-l10n-id="pref-api-key-placeholder"
+        type="text"
+        id="zotero-prefpane-__addonRef__-username"
+        preference="username"
         style="flex: 1;"
       />
     </hbox>
 
+    <vbox>
+      <html:label data-l10n-id="pref-custom-instructions"></html:label>
+      <html:textarea
+        id="zotero-prefpane-__addonRef__-custom-instructions"
+        preference="customInstructions"
+        rows="4"
+        style="width: 100%;"
+      ></html:textarea>
+    </vbox>
+
+    <vbox>
+      <html:label data-l10n-id="pref-excluded-tags"></html:label>
+      <html:textarea
+        id="zotero-prefpane-__addonRef__-excluded-tags"
+        preference="excludedTags"
+        rows="3"
+        style="width: 100%;"
+      ></html:textarea>
+    </vbox>
+  </groupbox>
+
+  <!-- Claude Code 设置 -->
+  <groupbox>
+    <label><html:h3 data-l10n-id="pref-section-claude-code"></html:h3></label>
+
     <hbox align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-model"
-        data-l10n-id="pref-model"
-      ></html:label>
+      <html:label data-l10n-id="pref-claude-path"></html:label>
+      <html:input
+        type="text"
+        id="zotero-prefpane-__addonRef__-claude-path"
+        preference="claudePath"
+        style="flex: 1;"
+        data-l10n-id="pref-claude-path-placeholder"
+      />
+    </hbox>
+
+    <hbox align="center">
+      <html:label data-l10n-id="pref-model"></html:label>
       <menulist
         id="zotero-prefpane-__addonRef__-model"
         preference="model"
       >
         <menupopup>
-          <menuitem label="Claude Sonnet 4.5" value="claude-sonnet-4-5-20250514" />
-          <menuitem label="Claude Haiku 4.5" value="claude-haiku-4-5-20250514" />
+          <menuitem label="Claude Sonnet 4.6" value="claude-sonnet-4-6" />
+          <menuitem label="Claude Opus 4.6" value="claude-opus-4-6" />
+          <menuitem label="Claude Haiku 4.5" value="claude-haiku-4-5-20251001" />
         </menupopup>
       </menulist>
     </hbox>
 
     <hbox align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-proxy-port"
-        data-l10n-id="pref-proxy-port"
-      ></html:label>
+      <html:label data-l10n-id="pref-max-turns"></html:label>
+      <html:input
+        type="number"
+        id="zotero-prefpane-__addonRef__-max-turns"
+        preference="maxTurns"
+        style="width: 80px;"
+      />
+    </hbox>
+  </groupbox>
+
+  <!-- API 回退设置 -->
+  <groupbox>
+    <label><html:h3 data-l10n-id="pref-section-api-fallback"></html:h3></label>
+
+    <hbox align="center">
+      <html:label data-l10n-id="pref-api-key"></html:label>
+      <html:input
+        type="password"
+        id="zotero-prefpane-__addonRef__-api-key"
+        preference="apiKey"
+        style="flex: 1;"
+      />
+    </hbox>
+
+    <hbox align="center">
+      <html:label data-l10n-id="pref-proxy-port"></html:label>
       <html:input
         type="number"
         id="zotero-prefpane-__addonRef__-proxy-port"
@@ -54,7 +121,7 @@
     </hbox>
   </groupbox>
 
-  <!-- Context Section -->
+  <!-- 上下文设置 -->
   <groupbox>
     <label><html:h3 data-l10n-id="pref-section-context"></html:h3></label>
 
@@ -63,43 +130,6 @@
       preference="autoContext"
       data-l10n-id="pref-auto-context"
     />
-  </groupbox>
-
-  <!-- Obsidian Bridge Section -->
-  <groupbox>
-    <label><html:h3 data-l10n-id="pref-section-obsidian"></html:h3></label>
-
-    <checkbox
-      id="zotero-prefpane-__addonRef__-obsidian-enabled"
-      preference="obsidian.enabled"
-      data-l10n-id="pref-obsidian-enabled"
-    />
-
-    <hbox align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-obsidian-api-key"
-        data-l10n-id="pref-obsidian-api-key"
-      ></html:label>
-      <html:input
-        type="password"
-        id="zotero-prefpane-__addonRef__-obsidian-api-key"
-        preference="obsidian.apiKey"
-        style="flex: 1;"
-      />
-    </hbox>
-
-    <hbox align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-obsidian-vault-prefix"
-        data-l10n-id="pref-obsidian-vault-prefix"
-      ></html:label>
-      <html:input
-        type="text"
-        id="zotero-prefpane-__addonRef__-obsidian-vault-prefix"
-        preference="obsidian.vaultPrefix"
-        style="flex: 1;"
-      />
-    </hbox>
   </groupbox>
 </groupbox>
 <vbox>
